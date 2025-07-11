@@ -15,11 +15,13 @@ export interface LoanItem {
   totalServices?: number; // Totale servizi accessori
   practiceExpenses?: number; // Spese istruttoria pratica
   totalInterests?: number; // Totale interessi calcolato
+  insurancePerInstallment?: number; // Assicurazione per rata
 }
 
 export interface AmortizationItem {
   installment: number;
-  paymentDate: Date | null;
+  dueDate: Date; // Data di scadenza della rata
+  paymentDate: Date | null; // Data effettiva di pagamento
   amount: number;
   principal: number;
   interest: number;

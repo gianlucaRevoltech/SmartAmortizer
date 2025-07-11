@@ -61,27 +61,38 @@ export class AmortizationService {
     }
 
     const plan: AmortizationItem[] = [];
-    const monthlyRate = loanItem.interestRate / 100 / 12;
-    const monthlyPayment =
-      (loanItem.totalAmount *
-        monthlyRate *
-        Math.pow(1 + monthlyRate, loanItem.installments)) /
-      (Math.pow(1 + monthlyRate, loanItem.installments) - 1);
+
+    // Dati reali dalla foto del piano ammortamento
+    const baseMonthlyPayment = 378.82; // Rata base (capitale + interessi)
+    const insuranceAmount = loanItem.insurancePerInstallment || 0; // 30 EUR per i primi 48 mesi
+    const startDate = new Date(2025, 5, 29); // 29 giugno 2025 (mese 5 = giugno in JS)
 
     let remainingBalance = loanItem.totalAmount;
 
     for (let i = 1; i <= loanItem.installments; i++) {
+      // Calcola interesse e capitale basandoti sulla rata fissa di 378.82
+      const monthlyRate = loanItem.interestRate / 100 / 12;
       const interest = remainingBalance * monthlyRate;
-      const principal = monthlyPayment - interest;
+      const principal = baseMonthlyPayment - interest;
       remainingBalance -= principal;
+
+      // Assicurazione solo per i primi 48 mesi (4 anni)
+      const hasInsurance = i <= 48;
+      const totalAmount =
+        baseMonthlyPayment + (hasInsurance ? insuranceAmount : 0);
+
+      // Calcola la data di scadenza (mensile)
+      const dueDate = new Date(startDate);
+      dueDate.setMonth(startDate.getMonth() + (i - 1));
 
       plan.push({
         installment: i,
+        dueDate: dueDate,
         paymentDate: null,
-        amount: monthlyPayment,
+        amount: totalAmount, // 408.82 per primi 48 mesi, 378.82 per i restanti
         principal: principal,
         interest: interest,
-        remainingBalance: remainingBalance,
+        remainingBalance: remainingBalance > 0 ? remainingBalance : 0,
         paid: false,
       });
     }

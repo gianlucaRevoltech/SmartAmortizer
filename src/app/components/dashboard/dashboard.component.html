@@ -91,12 +91,16 @@
         <mat-card-content>
           <div class="progress-stats">
             <div class="progress-item">
-              <span class="label">Rate Pagate:</span>
-              <span class="value">{{ stats.totalInstallmentsPaid }}</span>
+              <span class="label">✅ Rate Pagate:</span>
+              <span class="value" style="color: #4caf50; font-weight: 700">{{
+                stats.totalInstallmentsPaid
+              }}</span>
             </div>
             <div class="progress-item">
-              <span class="label">Rate Rimanenti:</span>
-              <span class="value">{{ stats.totalInstallmentsRemaining }}</span>
+              <span class="label">⏰ Rate Da Pagare:</span>
+              <span class="value" style="color: #f44336; font-weight: 700">{{
+                stats.totalInstallmentsRemaining
+              }}</span>
             </div>
           </div>
           <mat-progress-bar
@@ -167,12 +171,14 @@
           <div class="chart-legend">
             <div class="legend-item">
               <div class="legend-color paid"></div>
-              <span>Pagato: {{ stats.totalInstallmentsPaid }} rate</span>
+              <span style="color: #4caf50; font-weight: 600"
+                >Pagato: {{ stats.totalInstallmentsPaid }} rate</span
+              >
             </div>
             <div class="legend-item">
               <div class="legend-color remaining"></div>
-              <span
-                >Rimanente: {{ stats.totalInstallmentsRemaining }} rate</span
+              <span style="color: #f44336; font-weight: 600"
+                >Da Pagare: {{ stats.totalInstallmentsRemaining }} rate</span
               >
             </div>
           </div>
@@ -193,21 +199,25 @@
         <mat-card-content>
           <div class="interests-grid">
             <div class="interest-item paid">
-              <span class="interest-label">Interessi Pagati</span>
-              <span class="interest-value">{{
+              <span class="interest-label" style="color: #4caf50"
+                >✓ Interessi Pagati</span
+              >
+              <span class="interest-value" style="color: #4caf50">{{
                 stats.totalInterestsPaid
                   | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
               }}</span>
             </div>
             <div class="interest-item remaining">
-              <span class="interest-label">Interessi Rimanenti</span>
-              <span class="interest-value">{{
+              <span class="interest-label" style="color: #f44336"
+                >⚠ Interessi Da Pagare</span
+              >
+              <span class="interest-value" style="color: #f44336">{{
                 stats.totalInterestsRemaining
                   | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
               }}</span>
             </div>
             <div class="interest-item total">
-              <span class="interest-label">Totale Interessi</span>
+              <span class="interest-label">📊 Totale Interessi</span>
               <span class="interest-value">{{
                 stats.totalInterestsPaid + stats.totalInterestsRemaining
                   | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
@@ -245,8 +255,8 @@
       <mat-card class="next-payment-card" *ngIf="getNextPaymentDue()">
         <mat-card-header>
           <mat-card-title>
-            <mat-icon>schedule</mat-icon>
-            Prossima Rata
+            <mat-icon style="color: #f44336">schedule</mat-icon>
+            Prossima Rata - DA PAGARE
           </mat-card-title>
         </mat-card-header>
         <mat-card-content>
@@ -258,13 +268,13 @@
                   | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
               }}
             </p>
-            <p class="payment-number">
-              Rata #{{ getNextPaymentDue()?.installment?.installment }}
+            <p class="payment-number payment-status unpaid">
+              Rata #{{ getNextPaymentDue()?.installment?.installment }} - DA
+              PAGARE
             </p>
           </div>
           <button
             mat-raised-button
-            color="primary"
             class="pay-button"
             (click)="onPayInstallment()"
           >

@@ -17,21 +17,17 @@ export class DataService {
   }
 
   private loadInitialData(): Observable<LoanItem[]> {
-    // First check if we have data in localStorage
-    const savedData = this.loadFromStorage();
-    if (savedData && savedData.length > 0) {
-      this.loanItems = savedData;
-      return of(savedData);
+    // First check if we have data in localStorage (only in browser)
+    if (typeof localStorage !== 'undefined') {
+      const savedData = this.loadFromStorage();
+      if (savedData && savedData.length > 0) {
+        this.loanItems = savedData;
+        return of(savedData);
+      }
     }
 
-    // If no saved data, load from JSON file
-    return this.http.get<LoanItem[]>(this.dataUrl).pipe(
-      tap((data) => {
-        this.loanItems = data;
-        this.saveToStorage(); // Save initial data to localStorage
-      }),
-      catchError(this.handleError)
-    );
+    // If no saved data, create initial real-world loan data
+    return this.createInitialLoanData();
   }
 
   getLoanItems(): Observable<LoanItem[]> {
@@ -100,11 +96,38 @@ export class DataService {
     return [];
   }
 
+  // Method to create initial real-world loan from vehicle financing document
+  createInitialLoanData(): Observable<LoanItem[]> {
+    const vehicleLoan: LoanItem = {
+      id: 1,
+      name: 'Finanziamento Veicolo',
+      type: 'Car',
+      totalAmount: 26789.42, // Capitale finanziato
+      remainingAmount: 26789.42, // All'inizio tutto è da pagare
+      interestRate: 8.01, // T.A.N.
+      installments: 96, // 96 rate mensili (8 anni)
+      paidInstallments: 0,
+      amortizationPlan: [], // Will be calculated by AmortizationService
+      // Additional details from the document
+      taeg: 9.11, // T.A.E.G.
+      vehiclePrice: 28671.54, // Prezzo di vendita del veicolo
+      downPayment: 9000.0, // Importo anticipo
+      totalServices: 6722.88, // Totale servizi accessori (ICAR + NOBIS + STELLANTIS)
+      practiceExpenses: 395.0, // Spese istruttoria pratica
+      totalInterests: 9577.3, // Totale interessi
+      insurancePerInstallment: 30.0, // Assicurazione per i primi 48 mesi (4 anni)
+    };
+
+    this.loanItems = [vehicleLoan];
+    this.saveToStorage();
+    return of([vehicleLoan]);
+  }
+
   // Method to reset data (useful for testing)
   resetToInitialData(): Observable<LoanItem[]> {
     localStorage.removeItem(this.STORAGE_KEY);
     this.loanItems = [];
-    return this.loadInitialData();
+    return this.createInitialLoanData(); // Use real data instead of empty
   }
 
   private handleError(error: any) {

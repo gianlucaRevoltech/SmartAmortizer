@@ -1,125 +1,196 @@
-<mat-card>
-  <mat-card-header>
-    <mat-card-title>Aggiungi un nuovo finanziamento</mat-card-title>
-  </mat-card-header>
-  <mat-card-content>
-    <form [formGroup]="loanForm" (ngSubmit)="onSubmit()">
-      <mat-form-field appearance="fill">
-        <mat-label>Nome</mat-label>
-        <input matInput formControlName="name" />
-      </mat-form-field>
+<div class="new-loan-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-content">
+      <h1>
+        <mat-icon>add_circle</mat-icon>
+        Nuovo Finanziamento
+      </h1>
+      <p class="subtitle">
+        Crea un nuovo finanziamento e calcola automaticamente il piano di
+        ammortamento
+      </p>
+    </div>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="goBack()"
+      class="back-btn"
+    >
+      <mat-icon>arrow_back</mat-icon>
+      Torna alla Lista
+    </button>
+  </div>
 
-      <mat-form-field appearance="fill">
-        <mat-label>Tipo</mat-label>
-        <mat-select formControlName="type">
-          <mat-option value="House">Casa</mat-option>
-          <mat-option value="Car">Auto</mat-option>
-          <mat-option value="Appliance">Elettrodomestico</mat-option>
-        </mat-select>
-      </mat-form-field>
+  <!-- Form Card -->
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>description</mat-icon>
+        Dettagli del Finanziamento
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="loanForm" (ngSubmit)="onSubmit()" class="loan-form">
+        <!-- Row 1: Nome e Tipo -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Nome Finanziamento</mat-label>
+            <input
+              matInput
+              formControlName="name"
+              placeholder="es. Mutuo Casa, Prestito Auto..."
+              required
+            />
+            <mat-icon matSuffix>edit</mat-icon>
+            <mat-error *ngIf="loanForm.get('name')?.hasError('required')">
+              Il nome è obbligatorio
+            </mat-error>
+          </mat-form-field>
 
-      <mat-form-field appearance="fill">
-        <mat-label>Importo totale</mat-label>
-        <input
-          matInput
-          type="text"
-          formControlName="totalAmount"
-          placeholder="Es: 26.789,42"
-          (input)="formatCurrency($event)"
-          (blur)="validateCurrency($event)"
-        />
-        <span matSuffix>€</span>
-      </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Tipo Finanziamento</mat-label>
+            <mat-select formControlName="type" required>
+              <mat-option value="House">
+                <mat-icon>home</mat-icon>
+                Casa/Mutuo
+              </mat-option>
+              <mat-option value="Car">
+                <mat-icon>directions_car</mat-icon>
+                Auto/Veicolo
+              </mat-option>
+              <mat-option value="Appliance">
+                <mat-icon>kitchen</mat-icon>
+                Elettrodomestici
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="loanForm.get('type')?.hasError('required')">
+              Il tipo è obbligatorio
+            </mat-error>
+          </mat-form-field>
+        </div>
 
-      <mat-form-field appearance="fill">
-        <mat-label>Tasso di interesse - T.A.N. (%)</mat-label>
-        <input
-          matInput
-          type="number"
-          formControlName="interestRate"
-          step="0.01"
-        />
-      </mat-form-field>
+        <!-- Row 2: Importo e Tasso -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Importo Totale</mat-label>
+            <input
+              matInput
+              type="number"
+              formControlName="totalAmount"
+              placeholder="0"
+              min="1000"
+              max="1000000"
+              required
+            />
+            <span matTextPrefix>€ </span>
+            <mat-icon matSuffix>euro</mat-icon>
+            <mat-hint>Importo finanziato (min €1.000)</mat-hint>
+            <mat-error
+              *ngIf="loanForm.get('totalAmount')?.hasError('required')"
+            >
+              L'importo è obbligatorio
+            </mat-error>
+            <mat-error *ngIf="loanForm.get('totalAmount')?.hasError('min')">
+              L'importo minimo è €1.000
+            </mat-error>
+          </mat-form-field>
 
-      <!-- Optional T.A.E.G. field -->
-      <mat-form-field appearance="fill">
-        <mat-label>T.A.E.G. (%) - Opzionale</mat-label>
-        <input matInput type="number" formControlName="taeg" step="0.01" />
-      </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Tasso di Interesse (T.A.N.)</mat-label>
+            <input
+              matInput
+              type="number"
+              formControlName="interestRate"
+              placeholder="0.0"
+              min="0.1"
+              max="20"
+              step="0.1"
+              required
+            />
+            <span matTextSuffix>%</span>
+            <mat-icon matSuffix>percent</mat-icon>
+            <mat-hint>Tasso annuo nominale (0.1% - 20%)</mat-hint>
+            <mat-error
+              *ngIf="loanForm.get('interestRate')?.hasError('required')"
+            >
+              Il tasso è obbligatorio
+            </mat-error>
+            <mat-error *ngIf="loanForm.get('interestRate')?.hasError('min')">
+              Il tasso minimo è 0.1%
+            </mat-error>
+          </mat-form-field>
+        </div>
 
-      <mat-form-field appearance="fill">
-        <mat-label>Numero di rate</mat-label>
-        <input matInput type="number" formControlName="installments" />
-      </mat-form-field>
+        <!-- Row 3: Durata -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Durata in Mesi</mat-label>
+            <input
+              matInput
+              type="number"
+              formControlName="installments"
+              placeholder="0"
+              min="12"
+              max="480"
+              required
+            />
+            <span matTextSuffix>mesi</span>
+            <mat-icon matSuffix>schedule</mat-icon>
+            <mat-hint>Numero di rate mensili (12-480 mesi)</mat-hint>
+            <mat-error
+              *ngIf="loanForm.get('installments')?.hasError('required')"
+            >
+              La durata è obbligatoria
+            </mat-error>
+            <mat-error *ngIf="loanForm.get('installments')?.hasError('min')">
+              La durata minima è 12 mesi
+            </mat-error>
+            <mat-error *ngIf="loanForm.get('installments')?.hasError('max')">
+              La durata massima è 480 mesi (40 anni)
+            </mat-error>
+          </mat-form-field>
 
-      <!-- Expandable section for car financing details -->
-      <div
-        *ngIf="loanForm.get('type')?.value === 'Car'"
-        class="car-details-section"
-      >
-        <h4>Dettagli Finanziamento Auto (Opzionali)</h4>
+          <!-- Anteprima Rata -->
+          <div class="preview-card" *ngIf="monthlyPaymentPreview > 0">
+            <mat-icon>calculate</mat-icon>
+            <div class="preview-content">
+              <h3>Rata Mensile Stimata</h3>
+              <p class="amount">
+                {{
+                  monthlyPaymentPreview
+                    | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+                }}
+              </p>
+            </div>
+          </div>
+        </div>
 
-        <mat-form-field appearance="fill">
-          <mat-label>Prezzo Veicolo</mat-label>
-          <input
-            matInput
-            type="text"
-            formControlName="vehiclePrice"
-            placeholder="Es: 28.671,54"
-            (input)="formatCurrency($event)"
-            (blur)="validateCurrency($event)"
-          />
-          <span matSuffix>€</span>
-        </mat-form-field>
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button
+            mat-button
+            type="button"
+            (click)="goBack()"
+            class="cancel-btn"
+          >
+            <mat-icon>cancel</mat-icon>
+            Annulla
+          </button>
 
-        <mat-form-field appearance="fill">
-          <mat-label>Anticipo</mat-label>
-          <input
-            matInput
-            type="text"
-            formControlName="downPayment"
-            placeholder="Es: 9.000,00"
-            (input)="formatCurrency($event)"
-            (blur)="validateCurrency($event)"
-          />
-          <span matSuffix>€</span>
-        </mat-form-field>
-
-        <mat-form-field appearance="fill">
-          <mat-label>Totale Servizi</mat-label>
-          <input
-            matInput
-            type="text"
-            formControlName="totalServices"
-            placeholder="Es: 6.722,88"
-            (input)="formatCurrency($event)"
-            (blur)="validateCurrency($event)"
-          />
-          <span matSuffix>€</span>
-        </mat-form-field>
-
-        <mat-form-field appearance="fill">
-          <mat-label>Spese Istruttoria</mat-label>
-          <input
-            matInput
-            type="text"
-            formControlName="practiceExpenses"
-            placeholder="Es: 395,00"
-            (input)="formatCurrency($event)"
-            (blur)="validateCurrency($event)"
-          />
-          <span matSuffix>€</span>
-        </mat-form-field>
-      </div>
-
-      <button
-        mat-raised-button
-        color="primary"
-        type="submit"
-        [disabled]="!loanForm.valid"
-      >
-        Aggiungi
-      </button>
-    </form>
-  </mat-card-content>
-</mat-card>
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            [disabled]="loanForm.invalid || isSubmitting"
+            class="submit-btn"
+          >
+            <mat-icon>save</mat-icon>
+            <span *ngIf="!isSubmitting">Crea Finanziamento</span>
+            <span *ngIf="isSubmitting">Creazione in corso...</span>
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

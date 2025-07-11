@@ -1,271 +1,536 @@
-<div class="container">
-  <div class="left-column">
-    <mat-card class="form-card">
-      <mat-card-header>
-        <mat-card-title>{{
-          showNewLoanForm ? "Aggiungi Nuovo Finanziamento" : "Opzioni"
-        }}</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <button
-          mat-stroked-button
-          color="primary"
-          (click)="showNewLoanForm = !showNewLoanForm"
-          class="add-loan-button"
-        >
-          <mat-icon>{{ showNewLoanForm ? "close" : "add" }}</mat-icon>
-          {{ showNewLoanForm ? "Annulla" : "Nuovo Finanziamento" }}
-        </button>
+<div class="loans-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-content">
+      <h1>
+        <mat-icon>account_balance</mat-icon>
+        Lista Finanziamenti
+      </h1>
+      <p class="subtitle">
+        Gestisci tutti i tuoi finanziamenti e monitora i pagamenti
+      </p>
+    </div>
+    <div class="header-actions">
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="onNewLoan()"
+        class="new-loan-btn"
+      >
+        <mat-icon>add</mat-icon>
+        Nuovo Finanziamento
+      </button>
 
-        <app-new-loan
-          *ngIf="showNewLoanForm"
-          (newLoan)="addNewLoan($event)"
-        ></app-new-loan>
-      </mat-card-content>
-    </mat-card>
-
-    <mat-card class="loan-list-card">
-      <mat-card-header>
-        <mat-card-title>Seleziona un finanziamento</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <mat-list>
-          <mat-list-item
-            *ngFor="let item of loanItems"
-            (click)="selectLoanItem(item)"
-            [class.selected]="item === selectedLoanItem"
-            class="loan-item"
-          >
-            <mat-icon mat-list-icon>{{ getItemIcon(item.type) }}</mat-icon>
-            <div mat-line>{{ item.name }}</div>
-            <div mat-line class="loan-type">{{ item.type }}</div>
-            <button
-              mat-icon-button
-              color="warn"
-              (click)="deleteLoan(item, $event)"
-              class="delete-button"
-              matTooltip="Elimina finanziamento"
-            >
-              <mat-icon>delete</mat-icon>
-            </button>
-          </mat-list-item>
-        </mat-list>
-      </mat-card-content>
-    </mat-card>
+      <button
+        mat-stroked-button
+        color="warn"
+        (click)="onResetData()"
+        class="reset-btn"
+        matTooltip="Ripristina solo il finanziamento veicolo originale"
+      >
+        <mat-icon>refresh</mat-icon>
+        Reset Dati
+      </button>
+    </div>
   </div>
 
-  <div class="right-column">
-    <ng-container *ngIf="selectedLoanItem; else noLoanSelected">
-      <mat-card class="loan-details-card">
-        <mat-card-header>
-          <mat-card-title>{{ selectedLoanItem.name }}</mat-card-title>
-          <mat-card-subtitle>{{ selectedLoanItem.type }}</mat-card-subtitle>
-        </mat-card-header>
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p>Caricamento finanziamenti...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && loans.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">account_balance_wallet</mat-icon>
+    <h2>Nessun finanziamento trovato</h2>
+    <p>
+      Inizia aggiungendo il tuo primo finanziamento per monitorare i pagamenti
+    </p>
+    <button mat-raised-button color="primary" (click)="onNewLoan()">
+      <mat-icon>add</mat-icon>
+      Aggiungi Finanziamento
+    </button>
+  </div>
+
+  <!-- Loans Table -->
+  <mat-card
+    *ngIf="!isLoading && loans.length > 0 && !showAmortizationPlan"
+    class="table-card"
+  >
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>list</mat-icon>
+        I Tuoi Finanziamenti ({{ loans.length }})
+      </mat-card-title>
+      <mat-card-subtitle>
+        <mat-icon>info</mat-icon>
+        Clicca su una riga per vedere il piano di ammortamento dettagliato o usa
+        i pulsanti per gestire i finanziamenti
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="table-container">
+        <table mat-table [dataSource]="loans" class="loans-table">
+          <!-- Name Column -->
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Nome Finanziamento</th>
+            <td mat-cell *matCellDef="let loan">
+              <div class="loan-name-cell">
+                <mat-icon [class]="'type-icon ' + loan.type">{{
+                  getTypeIcon(loan.type)
+                }}</mat-icon>
+                <div class="loan-info">
+                  <span class="loan-name">{{ loan.name }}</span>
+                  <small class="loan-type">{{
+                    getTypeDisplayName(loan.type)
+                  }}</small>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Amount Column -->
+          <ng-container matColumnDef="amount">
+            <th mat-header-cell *matHeaderCellDef>Importo Totale</th>
+            <td mat-cell *matCellDef="let loan">
+              <div class="amount-cell">
+                <span class="total-amount">{{
+                  loan.totalAmount
+                    | currency : "EUR" : "symbol" : "1.0-0" : "it-IT"
+                }}</span>
+                <small class="remaining-amount">
+                  Residuo:
+                  {{
+                    loan.remainingAmount
+                      | currency : "EUR" : "symbol" : "1.0-0" : "it-IT"
+                  }}
+                </small>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Interest Rate Column -->
+          <ng-container matColumnDef="interestRate">
+            <th mat-header-cell *matHeaderCellDef>Tasso</th>
+            <td mat-cell *matCellDef="let loan">
+              <span class="interest-rate"
+                >{{ loan.interestRate | number : "1.1-1" }}%</span
+              >
+            </td>
+          </ng-container>
+
+          <!-- Monthly Payment Column -->
+          <ng-container matColumnDef="monthlyPayment">
+            <th mat-header-cell *matHeaderCellDef>Rata Mensile</th>
+            <td mat-cell *matCellDef="let loan">
+              <span class="monthly-payment">{{
+                getMonthlyPayment(loan)
+                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+              }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Progress Column -->
+          <ng-container matColumnDef="progress">
+            <th mat-header-cell *matHeaderCellDef>Progresso</th>
+            <td mat-cell *matCellDef="let loan">
+              <div class="progress-cell">
+                <div class="progress-info">
+                  <span class="progress-percentage"
+                    >{{ loan.completionPercentage }}%</span
+                  >
+                  <small class="progress-details"
+                    >{{ loan.paidInstallments }}/{{
+                      loan.installments
+                    }}
+                    rate</small
+                  >
+                </div>
+                <mat-progress-bar
+                  mode="determinate"
+                  [value]="loan.completionPercentage"
+                  [class]="'progress-bar ' + loan.statusClass"
+                ></mat-progress-bar>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Status Column (COLORI ROSSO/VERDE) -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Stato Pagamento</th>
+            <td mat-cell *matCellDef="let loan">
+              <span [class]="'payment-status ' + loan.statusClass">
+                <mat-icon>{{
+                  loan.statusClass === "paid" ? "check_circle" : "schedule"
+                }}</mat-icon>
+                {{ loan.statusText }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Azioni</th>
+            <td mat-cell *matCellDef="let loan">
+              <div class="action-buttons">
+                <button
+                  mat-icon-button
+                  color="primary"
+                  (click)="onViewDetails(loan)"
+                  matTooltip="Visualizza dettagli"
+                >
+                  <mat-icon>visibility</mat-icon>
+                </button>
+
+                <button
+                  mat-icon-button
+                  [color]="loan.statusClass === 'unpaid' ? 'accent' : 'primary'"
+                  (click)="onPayNextInstallmentFromList(loan)"
+                  [disabled]="loan.statusClass === 'paid'"
+                  [matTooltip]="
+                    loan.statusClass === 'paid'
+                      ? 'Prestito completato'
+                      : 'Paga prossima rata'
+                  "
+                  class="pay-button"
+                >
+                  <mat-icon>{{
+                    loan.statusClass === "paid" ? "done_all" : "payment"
+                  }}</mat-icon>
+                </button>
+
+                <button
+                  mat-icon-button
+                  color="warn"
+                  (click)="onUndoLastPaymentFromList(loan)"
+                  [disabled]="!hasPaymentsToUndo(loan)"
+                  matTooltip="Annulla ultimo pagamento"
+                  class="undo-button"
+                >
+                  <mat-icon>undo</mat-icon>
+                </button>
+
+                <button
+                  mat-icon-button
+                  color="primary"
+                  (click)="onEditLoan(loan)"
+                  matTooltip="Modifica finanziamento"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+
+                <button
+                  mat-icon-button
+                  color="warn"
+                  (click)="onDeleteLoan(loan)"
+                  matTooltip="Elimina finanziamento"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            [class]="'loan-row ' + row.statusClass"
+            (click)="onViewDetails(row)"
+            style="cursor: pointer"
+          ></tr>
+        </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Amortization Plan Details Table -->
+  <mat-card
+    *ngIf="showAmortizationPlan && selectedLoanItem"
+    class="amortization-plan-card"
+  >
+    <mat-card-header>
+      <mat-card-title>
+        <button
+          mat-icon-button
+          (click)="onBackToLoansList()"
+          matTooltip="Torna alla lista"
+        >
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <mat-icon>view_list</mat-icon>
+        Piano di Ammortamento - {{ selectedLoanItem.name }}
+      </mat-card-title>
+      <mat-card-subtitle>
+        Prospetto dettagliato di rimborso con
+        {{ selectedLoanItem.installments }} rate mensili (8 anni) -
+        Assicurazione inclusa per i primi 4 anni
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <!-- Loan Summary -->
+      <div class="loan-summary">
+        <!-- Vehicle details (if present) -->
+        <div *ngIf="selectedLoanItem.vehiclePrice" class="summary-item">
+          <span class="label">Prezzo Veicolo:</span>
+          <span class="value">{{
+            selectedLoanItem.vehiclePrice
+              | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+          }}</span>
+        </div>
+        <div *ngIf="selectedLoanItem.downPayment" class="summary-item">
+          <span class="label">Anticipo:</span>
+          <span class="value">{{
+            selectedLoanItem.downPayment
+              | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+          }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Importo Finanziato:</span>
+          <span class="value">{{
+            selectedLoanItem.totalAmount
+              | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+          }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">T.A.N.:</span>
+          <span class="value">{{ selectedLoanItem.interestRate }}%</span>
+        </div>
+        <div *ngIf="selectedLoanItem.taeg" class="summary-item">
+          <span class="label">T.A.E.G.:</span>
+          <span class="value">{{ selectedLoanItem.taeg }}%</span>
+        </div>
+        <div
+          *ngIf="selectedLoanItem.insurancePerInstallment"
+          class="summary-item"
+        >
+          <span class="label">Assicurazione per rata:</span>
+          <span class="value">{{
+            selectedLoanItem.insurancePerInstallment
+              | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+          }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Rate Pagate:</span>
+          <span class="value success"
+            >{{ selectedLoanItem.paidInstallments }} /
+            {{ selectedLoanItem.installments }}</span
+          >
+        </div>
+        <div class="summary-item">
+          <span class="label">Debito Residuo:</span>
+          <span class="value danger">{{
+            selectedLoanItem.remainingAmount
+              | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+          }}</span>
+        </div>
+      </div>
+
+      <!-- Amortization Table -->
+      <div class="amortization-table-container">
+        <table
+          mat-table
+          [dataSource]="selectedLoanItem.amortizationPlan"
+          class="amortization-table"
+        >
+          <!-- Installment Number Column -->
+          <ng-container matColumnDef="installment">
+            <th mat-header-cell *matHeaderCellDef>Rata</th>
+            <td mat-cell *matCellDef="let element">
+              {{ element.installment }}
+            </td>
+          </ng-container>
+
+          <!-- Due Date Column -->
+          <ng-container matColumnDef="dueDate">
+            <th mat-header-cell *matHeaderCellDef>Data scadenza</th>
+            <td mat-cell *matCellDef="let element">
+              {{ element.dueDate | date : "dd.MM.yyyy" : "it-IT" }}
+            </td>
+          </ng-container>
+
+          <!-- Principal Column -->
+          <ng-container matColumnDef="principal">
+            <th mat-header-cell *matHeaderCellDef>Quota Capitale</th>
+            <td mat-cell *matCellDef="let element">
+              {{
+                element.principal
+                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+              }}
+            </td>
+          </ng-container>
+
+          <!-- Interest Column -->
+          <ng-container matColumnDef="interest">
+            <th mat-header-cell *matHeaderCellDef>Quota interessi</th>
+            <td mat-cell *matCellDef="let element">
+              {{
+                element.interest
+                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+              }}
+            </td>
+          </ng-container>
+
+          <!-- Insurance Column (conditional per installment) -->
+          <ng-container matColumnDef="insurance">
+            <th mat-header-cell *matHeaderCellDef>Assicurazione</th>
+            <td mat-cell *matCellDef="let element">
+              <span *ngIf="hasInsuranceForInstallment(element.installment)">
+                {{
+                  getInsuranceForInstallment(
+                    element.installment,
+                    selectedLoanItem
+                  ) | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+                }}
+              </span>
+              <span
+                *ngIf="!hasInsuranceForInstallment(element.installment)"
+                class="no-insurance"
+                >-</span
+              >
+            </td>
+          </ng-container>
+
+          <!-- Amount Column -->
+          <ng-container matColumnDef="amount">
+            <th mat-header-cell *matHeaderCellDef>Importo rata</th>
+            <td mat-cell *matCellDef="let element">
+              {{
+                element.amount | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+              }}
+            </td>
+          </ng-container>
+
+          <!-- Remaining Balance Column -->
+          <ng-container matColumnDef="remainingBalance">
+            <th mat-header-cell *matHeaderCellDef>Capitale residuo dovuto</th>
+            <td mat-cell *matCellDef="let element">
+              {{
+                element.remainingBalance
+                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+              }}
+            </td>
+          </ng-container>
+
+          <!-- Status Column (COLORI ROSSO/VERDE) -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Stato</th>
+            <td mat-cell *matCellDef="let element">
+              <span
+                [class]="'payment-status ' + (element.paid ? 'paid' : 'unpaid')"
+              >
+                <mat-icon>{{
+                  element.paid ? "check_circle" : "schedule"
+                }}</mat-icon>
+                {{ element.paid ? "PAGATA" : "DA PAGARE" }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Azione</th>
+            <td mat-cell *matCellDef="let element">
+              <div class="installment-actions">
+                <button
+                  mat-icon-button
+                  color="accent"
+                  (click)="onPayInstallment(element.installment)"
+                  [disabled]="element.paid"
+                  [matTooltip]="element.paid ? 'Già pagata' : 'Paga rata'"
+                  class="pay-installment-btn"
+                >
+                  <mat-icon>{{ element.paid ? "done" : "payment" }}</mat-icon>
+                </button>
+
+                <button
+                  mat-icon-button
+                  color="warn"
+                  (click)="onUndoInstallmentPayment(element.installment)"
+                  [disabled]="!element.paid"
+                  matTooltip="Annulla pagamento"
+                  class="undo-installment-btn"
+                >
+                  <mat-icon>undo</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="amortizationColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: amortizationColumns"
+            [class]="'installment-row ' + (row.paid ? 'paid' : 'unpaid')"
+          ></tr>
+        </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Summary Cards -->
+  <div
+    *ngIf="!isLoading && loans.length > 0 && !showAmortizationPlan"
+    class="summary-section"
+  >
+    <div class="summary-grid">
+      <!-- Total Loans -->
+      <mat-card class="summary-card primary">
         <mat-card-content>
-          <div class="details-grid">
-            <div class="detail-item">
-              <span class="detail-label">Importo Finanziato:</span>
-              <span class="detail-value">{{
-                selectedLoanItem.totalAmount
-                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
-              }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Totale da Restituire:</span>
-              <span class="detail-value total-amount">{{
-                getTotalAmountToPay(selectedLoanItem)
-                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
-              }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Ancora da Pagare:</span>
-              <span class="detail-value remaining-amount">{{
-                getRemainingAmountToPay(selectedLoanItem)
-                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
-              }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Interessi Totali:</span>
-              <span class="detail-value interest-amount">{{
-                getTotalInterests(selectedLoanItem)
-                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
-              }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Capitale Residuo:</span>
-              <span class="detail-value">{{
-                selectedLoanItem.remainingAmount
-                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
-              }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">T.A.N.:</span>
-              <span class="detail-value"
-                >{{ selectedLoanItem.interestRate }}%</span
-              >
-            </div>
-            <div class="detail-item" *ngIf="selectedLoanItem.taeg">
-              <span class="detail-label">T.A.E.G.:</span>
-              <span class="detail-value taeg-amount"
-                >{{ selectedLoanItem.taeg }}%</span
-              >
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Rate Pagate:</span>
-              <span class="detail-value"
-                >{{ selectedLoanItem.paidInstallments }} /
-                {{ selectedLoanItem.installments }}</span
-              >
-            </div>
-            <!-- Additional Car Financing Details -->
-            <div class="detail-item" *ngIf="selectedLoanItem.vehiclePrice">
-              <span class="detail-label">Prezzo Veicolo:</span>
-              <span class="detail-value">{{
-                selectedLoanItem.vehiclePrice
-                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
-              }}</span>
-            </div>
-            <div class="detail-item" *ngIf="selectedLoanItem.downPayment">
-              <span class="detail-label">Anticipo:</span>
-              <span class="detail-value">{{
-                selectedLoanItem.downPayment
-                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
-              }}</span>
-            </div>
-            <div class="detail-item" *ngIf="selectedLoanItem.totalServices">
-              <span class="detail-label">Totale Servizi:</span>
-              <span class="detail-value">{{
-                selectedLoanItem.totalServices
-                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
-              }}</span>
-            </div>
-            <div class="detail-item" *ngIf="selectedLoanItem.practiceExpenses">
-              <span class="detail-label">Spese Istruttoria:</span>
-              <span class="detail-value">{{
-                selectedLoanItem.practiceExpenses
-                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
-              }}</span>
+          <div class="summary-content">
+            <mat-icon>account_balance_wallet</mat-icon>
+            <div class="summary-info">
+              <h3>{{ loans.length }}</h3>
+              <p>Finanziamenti Totali</p>
             </div>
           </div>
         </mat-card-content>
       </mat-card>
 
-      <mat-card class="amortization-table-card">
-        <mat-card-header>
-          <mat-card-title>Piano di Ammortamento</mat-card-title>
-        </mat-card-header>
+      <!-- Active Loans (ROSSO per prestiti non pagati) -->
+      <mat-card class="summary-card danger">
         <mat-card-content>
-          <div class="table-container">
-            <table
-              mat-table
-              [dataSource]="selectedLoanItem.amortizationPlan"
-              class="mat-elevation-z8"
-            >
-              <!-- Colonna Rata -->
-              <ng-container matColumnDef="installment">
-                <th mat-header-cell *matHeaderCellDef># Rata</th>
-                <td mat-cell *matCellDef="let element">
-                  {{ element.installment }}
-                </td>
-              </ng-container>
-
-              <!-- Colonna Data Pagamento -->
-              <ng-container matColumnDef="paymentDate">
-                <th mat-header-cell *matHeaderCellDef>Data Pagamento</th>
-                <td mat-cell *matCellDef="let element">
-                  {{ element.paymentDate | date : "dd/MM/yyyy" }}
-                </td>
-              </ng-container>
-
-              <!-- Colonna Importo -->
-              <ng-container matColumnDef="amount">
-                <th mat-header-cell *matHeaderCellDef>Importo Rata</th>
-                <td mat-cell *matCellDef="let element">
-                  {{
-                    element.amount
-                      | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
-                  }}
-                </td>
-              </ng-container>
-
-              <!-- Colonna Capitale -->
-              <ng-container matColumnDef="principal">
-                <th mat-header-cell *matHeaderCellDef>Quota Capitale</th>
-                <td mat-cell *matCellDef="let element">
-                  {{
-                    element.principal
-                      | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
-                  }}
-                </td>
-              </ng-container>
-
-              <!-- Colonna Interessi -->
-              <ng-container matColumnDef="interest">
-                <th mat-header-cell *matHeaderCellDef>Quota Interessi</th>
-                <td mat-cell *matCellDef="let element">
-                  {{
-                    element.interest
-                      | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
-                  }}
-                </td>
-              </ng-container>
-
-              <!-- Colonna Debito Residuo -->
-              <ng-container matColumnDef="remainingBalance">
-                <th mat-header-cell *matHeaderCellDef>Debito Residuo</th>
-                <td mat-cell *matCellDef="let element">
-                  {{
-                    element.remainingBalance
-                      | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
-                  }}
-                </td>
-              </ng-container>
-
-              <!-- Colonna Stato -->
-              <ng-container matColumnDef="paid">
-                <th mat-header-cell *matHeaderCellDef>Stato</th>
-                <td mat-cell *matCellDef="let element">
-                  <mat-chip
-                    [color]="element.paid ? 'primary' : 'warn'"
-                    disabled
-                  >
-                    {{ element.paid ? "Pagata" : "Da Pagare" }}
-                  </mat-chip>
-                </td>
-              </ng-container>
-
-              <!-- Colonna Azione -->
-              <ng-container matColumnDef="action">
-                <th mat-header-cell *matHeaderCellDef>Azione</th>
-                <td mat-cell *matCellDef="let element">
-                  <button
-                    mat-icon-button
-                    color="primary"
-                    (click)="payInstallment(element)"
-                    [disabled]="element.paid"
-                    matTooltip="Paga la rata"
-                  >
-                    <mat-icon>payment</mat-icon>
-                  </button>
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-            </table>
+          <div class="summary-content">
+            <mat-icon>schedule</mat-icon>
+            <div class="summary-info">
+              <h3>{{ getActiveLoansCount() }}</h3>
+              <p>In Corso (DA PAGARE)</p>
+            </div>
           </div>
         </mat-card-content>
       </mat-card>
-    </ng-container>
 
-    <ng-template #noLoanSelected>
-      <mat-card class="no-loan-card">
+      <!-- Completed Loans (VERDE per prestiti pagati) -->
+      <mat-card class="summary-card success">
         <mat-card-content>
-          <mat-icon class="no-loan-icon">info</mat-icon>
-          <p>Seleziona un finanziamento dalla lista per vederne i dettagli.</p>
-          <p>Oppure aggiungine uno nuovo!</p>
+          <div class="summary-content">
+            <mat-icon>check_circle</mat-icon>
+            <div class="summary-info">
+              <h3>{{ getCompletedLoansCount() }}</h3>
+              <p>Completati (PAGATI)</p>
+            </div>
+          </div>
         </mat-card-content>
       </mat-card>
-    </ng-template>
+
+      <!-- Total Monthly Payment -->
+      <mat-card class="summary-card warning">
+        <mat-card-content>
+          <div class="summary-content">
+            <mat-icon>payment</mat-icon>
+            <div class="summary-info">
+              <h3>
+                {{
+                  getTotalMonthlyPayment()
+                    | currency : "EUR" : "symbol" : "1.0-0" : "it-IT"
+                }}
+              </h3>
+              <p>Rate Mensili Totali</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
   </div>
 </div>

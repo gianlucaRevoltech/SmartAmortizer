@@ -1,24 +1,277 @@
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+// CSS Variables
+:host {
+  --primary-color: #3f51b5;
+  --accent-color: #ff4081;
+  --success-color: #4caf50;
+  --warning-color: #ff9800;
+  --danger-color: #f44336;
+  --background-light: #fafafa;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --border-radius: 8px;
+  --transition: all 0.3s ease;
 }
 
-.car-details-section {
-  background: rgba(63, 81, 181, 0.05);
-  padding: 20px;
-  border-radius: 12px;
-  border-left: 4px solid #3f51b5;
-  margin-top: 20px;
+.new-loan-container {
+  padding: 24px;
+  background: var(--background-light);
+  min-height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
+}
 
-  h4 {
-    margin: 0 0 16px 0;
-    color: #3f51b5;
-    font-weight: 600;
-    font-size: 1.1em;
+// Header Section
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e0e0e0;
+
+  .header-content {
+    h1 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 8px 0;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+
+      mat-icon {
+        font-size: 36px;
+        width: 36px;
+        height: 36px;
+        color: var(--primary-color);
+      }
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 16px;
+    }
   }
 
-  mat-form-field {
-    width: 100%;
+  .back-btn {
+    padding: 12px 24px;
+    font-weight: 600;
+    border-radius: var(--border-radius);
+
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
+}
+
+// Form Card
+.form-card {
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+
+  mat-card-header {
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+
+      mat-icon {
+        color: var(--primary-color);
+      }
+    }
+  }
+}
+
+// Form Styles
+.loan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+
+  &:last-child {
+    grid-template-columns: 1fr auto;
+  }
+}
+
+.form-field {
+  width: 100%;
+
+  mat-icon[matSuffix] {
+    color: var(--text-secondary);
+  }
+
+  .mat-mdc-form-field-focus-overlay {
+    background-color: var(--primary-color);
+  }
+}
+
+// Preview Card
+.preview-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--success-color), #81c784);
+  color: white;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  transition: var(--transition);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+  }
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    opacity: 0.9;
+  }
+
+  .preview-content {
+    h3 {
+      margin: 0 0 4px 0;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    .amount {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1;
+    }
+  }
+}
+
+// Form Actions
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
+
+  .cancel-btn {
+    padding: 12px 24px;
+    font-weight: 600;
+
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
+
+  .submit-btn {
+    padding: 12px 32px;
+    font-weight: 600;
+    border-radius: var(--border-radius);
+
+    mat-icon {
+      margin-right: 8px;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Form Field Error States
+.mat-mdc-form-field.mat-form-field-invalid {
+  .mat-mdc-text-field-wrapper {
+    border-color: var(--danger-color);
+  }
+}
+
+// Mat Select Options with Icons
+.mat-mdc-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  mat-icon {
+    color: var(--text-secondary);
+  }
+}
+
+// Success and Error Snackbar Styles (Global)
+::ng-deep {
+  .success-snackbar {
+    background-color: var(--success-color) !important;
+    color: white !important;
+  }
+
+  .error-snackbar {
+    background-color: var(--danger-color) !important;
+    color: white !important;
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .header-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+
+    .back-btn {
+      align-self: flex-start;
+    }
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+
+    &:last-child {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .preview-card {
+    margin-top: 16px;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .new-loan-container {
+    padding: 16px;
+  }
+
+  .header-content h1 {
+    font-size: 24px;
+
+    mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  .preview-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
   }
 }
