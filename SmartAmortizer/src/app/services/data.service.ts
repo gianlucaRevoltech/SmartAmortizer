@@ -17,20 +17,37 @@ export class DataService {
   }
 
   private loadInitialData(): Observable<LoanItem[]> {
-    // First check if we have data in localStorage
-    const savedData = this.loadFromStorage();
-    if (savedData && savedData.length > 0) {
-      this.loanItems = savedData;
-      return of(savedData);
+    // First check if we have data in localStorage (only in browser)
+    if (typeof localStorage !== 'undefined') {
+      const savedData = this.loadFromStorage();
+      if (savedData && savedData.length > 0) {
+        this.loanItems = savedData;
+        return of(savedData);
+      }
     }
 
-    // If no saved data, load from JSON file
+    // If no saved data or SSR, try to load from JSON file
+    // In SSR environment, provide fallback data
+    if (typeof window === 'undefined') {
+      // SSR environment - return empty array or default data
+      const defaultData: LoanItem[] = [];
+      this.loanItems = defaultData;
+      return of(defaultData);
+    }
+
+    // Browser environment - load from JSON file
     return this.http.get<LoanItem[]>(this.dataUrl).pipe(
       tap((data) => {
         this.loanItems = data;
         this.saveToStorage(); // Save initial data to localStorage
       }),
-      catchError(this.handleError)
+      catchError(() => {
+        // If HTTP fails, return empty array instead of throwing error
+        console.warn('Could not load data from JSON file, using empty array');
+        const emptyData: LoanItem[] = [];
+        this.loanItems = emptyData;
+        return of(emptyData);
+      })
     );
   }
 
