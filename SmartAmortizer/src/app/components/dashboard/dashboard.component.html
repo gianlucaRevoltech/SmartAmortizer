@@ -1,0 +1,345 @@
+<div class="dashboard-container">
+  <!-- Header Stats -->
+  <div class="stats-grid">
+    <mat-card class="stat-card primary" (click)="onStatCardClick('totalLoans')">
+      <mat-card-content>
+        <div class="stat-icon">
+          <mat-icon>account_balance_wallet</mat-icon>
+        </div>
+        <div class="stat-content">
+          <h3>{{ stats.totalLoans }}</h3>
+          <p>Finanziamenti Attivi</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card danger" (click)="onStatCardClick('totalDebt')">
+      <mat-card-content>
+        <div class="stat-icon">
+          <mat-icon>trending_up</mat-icon>
+        </div>
+        <div class="stat-content">
+          <h3>
+            {{
+              stats.totalDebt | currency : "EUR" : "symbol" : "1.0-0" : "it-IT"
+            }}
+          </h3>
+          <p>Debito Rimanente</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card
+      class="stat-card warning"
+      (click)="onStatCardClick('averageRate')"
+    >
+      <mat-card-content>
+        <div class="stat-icon">
+          <mat-icon>percent</mat-icon>
+        </div>
+        <div class="stat-content">
+          <h3>{{ stats.averageInterestRate | number : "1.1-1" }}%</h3>
+          <p>Tasso Medio</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="stat-card success" (click)="onStatCardClick('completion')">
+      <mat-card-content>
+        <div class="stat-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="stat-content">
+          <h3>{{ stats.completionPercentage | number : "1.0-0" }}%</h3>
+          <p>Completamento</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="content-grid">
+    <!-- Left Column -->
+    <div class="left-column">
+      <!-- Monthly Payment Card -->
+      <mat-card class="monthly-payment-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>payment</mat-icon>
+            Pagamento Mensile
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="monthly-amount">
+            {{
+              stats.monthlyPayment
+                | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+            }}
+          </div>
+          <p class="monthly-subtitle">Totale rate mensili</p>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Progress Card -->
+      <mat-card class="progress-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>timeline</mat-icon>
+            Progresso Pagamenti
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="progress-stats">
+            <div class="progress-item">
+              <span class="label">✅ Rate Pagate:</span>
+              <span class="value" style="color: #4caf50; font-weight: 700;">{{ stats.totalInstallmentsPaid }}</span>
+            </div>
+            <div class="progress-item">
+              <span class="label">⏰ Rate Da Pagare:</span>
+              <span class="value" style="color: #f44336; font-weight: 700;">{{ stats.totalInstallmentsRemaining }}</span>
+            </div>
+          </div>
+          <mat-progress-bar
+            mode="determinate"
+            [value]="stats.completionPercentage"
+            class="completion-bar"
+          >
+          </mat-progress-bar>
+          <p class="progress-text">
+            {{ stats.completionPercentage | number : "1.1-1" }}% completato
+          </p>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Loan Types Distribution -->
+      <mat-card class="types-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>pie_chart</mat-icon>
+            Tipi di Finanziamento
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="type-list">
+            <div
+              *ngFor="let type of getLoansByType() | keyvalue"
+              class="type-item"
+            >
+              <mat-icon class="type-icon">{{ getTypeIcon(type.key) }}</mat-icon>
+              <span class="type-name">{{ getTypeName(type.key) }}</span>
+              <span class="type-count">{{ type.value }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Progress Chart -->
+      <mat-card class="chart-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>donut_large</mat-icon>
+            Distribuzione Debiti
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="circular-progress">
+            <div class="circle-chart">
+              <svg width="160" height="160">
+                <circle class="circle-bg" cx="80" cy="80" r="40"></circle>
+                <circle
+                  class="circle"
+                  cx="80"
+                  cy="80"
+                  r="40"
+                  [style.stroke-dasharray]="
+                    (stats.completionPercentage * 251.2) / 100 + ', 251.2'
+                  "
+                ></circle>
+              </svg>
+              <div class="circle-center">
+                <span class="percentage"
+                  >{{ stats.completionPercentage | number : "1.0-0" }}%</span
+                >
+                <span class="label">Pagato</span>
+              </div>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <div class="legend-color paid"></div>
+              <span style="color: #4caf50; font-weight: 600;">Pagato: {{ stats.totalInstallmentsPaid }} rate</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color remaining"></div>
+              <span style="color: #f44336; font-weight: 600;">Da Pagare: {{ stats.totalInstallmentsRemaining }} rate</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-column">
+      <!-- Interests Summary -->
+      <mat-card class="interests-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>monetization_on</mat-icon>
+            Riepilogo Interessi
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="interests-grid">
+            <div class="interest-item paid">
+              <span class="interest-label" style="color: #4caf50;">✓ Interessi Pagati</span>
+              <span class="interest-value" style="color: #4caf50;">{{
+                stats.totalInterestsPaid
+                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+              }}</span>
+            </div>
+            <div class="interest-item remaining">
+              <span class="interest-label" style="color: #f44336;">⚠ Interessi Da Pagare</span>
+              <span class="interest-value" style="color: #f44336;">{{
+                stats.totalInterestsRemaining
+                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+              }}</span>
+            </div>
+            <div class="interest-item total">
+              <span class="interest-label">📊 Totale Interessi</span>
+              <span class="interest-value">{{
+                stats.totalInterestsPaid + stats.totalInterestsRemaining
+                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+              }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Top Loan Card -->
+      <mat-card class="top-loan-card" *ngIf="getTopLoanByAmount()">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>star</mat-icon>
+            Finanziamento Principale
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="top-loan-info">
+            <h4>{{ getTopLoanByAmount()?.name }}</h4>
+            <p class="loan-amount">
+              {{
+                getTopLoanByAmount()?.totalAmount
+                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+              }}
+            </p>
+            <p class="loan-type">
+              {{ getTypeName(getTopLoanByAmount()?.type || "") }}
+            </p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Next Payment Due -->
+      <mat-card class="next-payment-card" *ngIf="getNextPaymentDue()">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon style="color: #f44336;">schedule</mat-icon>
+            Prossima Rata - DA PAGARE
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="next-payment-info">
+            <h4>{{ getNextPaymentDue()?.loan?.name || "N/A" }}</h4>
+            <p class="payment-amount">
+              {{
+                getNextPaymentDue()?.installment?.amount
+                  | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+              }}
+            </p>
+            <p class="payment-number payment-status unpaid">
+              Rata #{{ getNextPaymentDue()?.installment?.installment }} - DA PAGARE
+            </p>
+          </div>
+          <button
+            mat-raised-button
+            class="pay-button"
+            (click)="onPayInstallment()"
+          >
+            <mat-icon>payment</mat-icon>
+            Paga Ora
+          </button>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Financial Insights -->
+      <mat-card class="insights-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>insights</mat-icon>
+            Analisi Finanziaria
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="insights-list">
+            <div class="insight-item" *ngIf="stats.totalLoans > 0">
+              <mat-icon class="insight-icon">trending_down</mat-icon>
+              <div class="insight-content">
+                <span class="insight-title">Risparmio Mensile</span>
+                <span class="insight-value">{{
+                  getEstimatedSavings()
+                    | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+                }}</span>
+              </div>
+            </div>
+            <div class="insight-item" *ngIf="stats.totalLoans > 0">
+              <mat-icon class="insight-icon">calendar_today</mat-icon>
+              <div class="insight-content">
+                <span class="insight-title">Tempo Rimasto</span>
+                <span class="insight-value">{{
+                  getEstimatedTimeRemaining()
+                }}</span>
+              </div>
+            </div>
+            <div class="insight-item" *ngIf="stats.averageInterestRate > 0">
+              <mat-icon class="insight-icon">compare_arrows</mat-icon>
+              <div class="insight-content">
+                <span class="insight-title">Efficienza Rate</span>
+                <span class="insight-value">{{ getPaymentEfficiency() }}%</span>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <mat-card class="quick-actions-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>flash_on</mat-icon>
+        Azioni Rapide
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="actions-grid">
+        <button mat-raised-button color="primary" (click)="onViewAllLoans()">
+          <mat-icon>list</mat-icon>
+          Vedi Tutti i Finanziamenti
+        </button>
+        <button mat-raised-button color="accent" (click)="onNewLoan()">
+          <mat-icon>add</mat-icon>
+          Nuovo Finanziamento
+        </button>
+        <button mat-raised-button (click)="onGenerateReport()">
+          <mat-icon>assessment</mat-icon>
+          Report Dettagliato
+        </button>
+        <button mat-raised-button (click)="onExportData()">
+          <mat-icon>file_download</mat-icon>
+          Esporta Dati
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
