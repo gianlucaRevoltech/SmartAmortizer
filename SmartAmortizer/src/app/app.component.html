@@ -1,0 +1,33 @@
+<div class="app-container">
+  <!-- Header Toolbar -->
+  <mat-toolbar color="primary" class="app-toolbar">
+    <mat-icon>account_balance</mat-icon>
+    <span class="app-title">Smart Amortizer</span>
+
+    <span class="spacer"></span>
+
+    <!-- Navigation Menu -->
+    <button
+      mat-button
+      routerLink="/"
+      [routerLinkActive]="'active'"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <mat-icon>dashboard</mat-icon>
+      Dashboard
+    </button>
+    <button mat-button routerLink="/loans" routerLinkActive="active">
+      <mat-icon>list</mat-icon>
+      Finanziamenti
+    </button>
+    <button mat-button routerLink="/new-loan" routerLinkActive="active">
+      <mat-icon>add</mat-icon>
+      Nuovo
+    </button>
+  </mat-toolbar>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <router-outlet></router-outlet>
+  </div>
+</div>
