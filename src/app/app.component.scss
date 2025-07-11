@@ -1,0 +1,69 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+
+  .app-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    .app-title {
+      margin-left: 12px;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .spacer {
+      flex: 1 1 auto;
+    }
+
+    button {
+      margin-left: 8px;
+      border-radius: 8px;
+
+      mat-icon {
+        margin-right: 4px;
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+
+      &.active {
+        background: rgba(255, 255, 255, 0.1);
+      }
+    }
+  }
+
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .app-toolbar {
+    .app-title {
+      display: none;
+    }
+
+    button {
+      min-width: auto;
+      padding: 0 8px;
+
+      .mat-button-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      span:not(.mat-button-wrapper) {
+        display: none;
+      }
+    }
+  }
+}

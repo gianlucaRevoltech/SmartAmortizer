@@ -1,0 +1,41 @@
+[
+  {
+    "id": 1,
+    "name": "Casa al mare",
+    "type": "House",
+    "totalAmount": 200000,
+    "remainingAmount": 200000,
+    "interestRate": 3.5,
+    "installments": 240,
+    "paidInstallments": 0,
+    "amortizationPlan": []
+  },
+  {
+    "id": 2,
+    "name": "Fiat 500",
+    "type": "Car",
+    "totalAmount": 15000,
+    "remainingAmount": 15000,
+    "interestRate": 5,
+    "installments": 60,
+    "paidInstallments": 0,
+    "amortizationPlan": []
+  },
+  {
+    "id": 3,
+    "name": "Auto Nuova - Finanziamento STELLANTIS",
+    "type": "Car",
+    "totalAmount": 26789.42,
+    "remainingAmount": 26789.42,
+    "interestRate": 8.01,
+    "installments": 96,
+    "paidInstallments": 0,
+    "amortizationPlan": [],
+    "taeg": 9.11,
+    "vehiclePrice": 28671.54,
+    "downPayment": 9000.0,
+    "totalServices": 6722.88,
+    "practiceExpenses": 395.0,
+    "totalInterests": 9577.3
+  }
+]

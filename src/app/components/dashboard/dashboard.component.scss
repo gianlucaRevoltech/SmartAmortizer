@@ -1,0 +1,608 @@
+.dashboard-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+
+    .stat-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+      }
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(
+          45deg,
+          var(--accent-color),
+          var(--accent-color-light)
+        );
+      }
+
+      &.primary::before {
+        background: linear-gradient(45deg, #2196f3, #64b5f6);
+      }
+
+      &.danger::before {
+        background: linear-gradient(45deg, #f44336, #ef5350);
+      }
+
+      &.warning::before {
+        background: linear-gradient(45deg, #ff9800, #ffb74d);
+      }
+
+      &.success::before {
+        background: linear-gradient(45deg, #4caf50, #81c784);
+      }
+
+      mat-card-content {
+        padding: 24px !important;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+
+        .stat-icon {
+          flex-shrink: 0;
+          width: 56px;
+          height: 56px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(var(--accent-rgb), 0.1);
+
+          mat-icon {
+            font-size: 28px;
+            width: 28px;
+            height: 28px;
+            color: var(--accent-color);
+          }
+        }
+
+        .stat-content {
+          h3 {
+            margin: 0 0 4px 0;
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a1a1a;
+            line-height: 1.2;
+          }
+
+          p {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+          }
+        }
+      }
+    }
+  }
+
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+    }
+
+    .left-column,
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+  }
+
+  .monthly-payment-card,
+  .progress-card,
+  .types-card,
+  .interests-card,
+  .top-loan-card,
+  .next-payment-card,
+  .quick-actions-card {
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    mat-card-header {
+      padding: 20px 20px 0 20px;
+
+      mat-card-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1a1a;
+
+        mat-icon {
+          color: var(--primary-color);
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+
+    mat-card-content {
+      padding: 16px 20px 20px 20px !important;
+    }
+  }
+
+  .monthly-payment-card {
+    .monthly-amount {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 8px;
+      background: linear-gradient(45deg, var(--primary-color), #64b5f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .monthly-subtitle {
+      color: #666;
+      margin: 0;
+      font-size: 14px;
+    }
+  }
+
+  .progress-card {
+    .progress-stats {
+      margin-bottom: 20px;
+
+      .progress-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .label {
+          color: #666;
+          font-size: 14px;
+        }
+
+        .value {
+          font-weight: 600;
+          color: #1a1a1a;
+          font-size: 16px;
+        }
+      }
+    }
+
+    .completion-bar {
+      height: 8px;
+      border-radius: 4px;
+      margin: 16px 0 8px 0;
+
+      ::ng-deep .mat-progress-bar-fill::after {
+        background: linear-gradient(45deg, var(--primary-color), #64b5f6);
+      }
+
+      ::ng-deep .mat-progress-bar-buffer {
+        background: rgba(var(--primary-rgb), 0.1);
+      }
+    }
+
+    .progress-text {
+      text-align: center;
+      color: #666;
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+    }
+  }
+
+  .types-card {
+    .type-list {
+      .type-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .type-icon {
+          color: var(--primary-color);
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+
+        .type-name {
+          flex: 1;
+          font-weight: 500;
+          color: #1a1a1a;
+        }
+
+        .type-count {
+          background: var(--primary-color);
+          color: white;
+          padding: 4px 8px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 600;
+          min-width: 24px;
+          text-align: center;
+        }
+      }
+    }
+  }
+
+  .chart-card {
+    .circular-progress {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 24px;
+
+      .circle-chart {
+        position: relative;
+        width: 160px;
+        height: 160px;
+
+        svg {
+          width: 100%;
+          height: 100%;
+          transform: rotate(-90deg);
+
+          .circle-bg,
+          .circle {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+          }
+
+          .circle-bg {
+            stroke: rgba(var(--primary-rgb), 0.1);
+          }
+
+          .circle {
+            stroke: var(--primary-color);
+            stroke-dasharray: 0, 251.2;
+            stroke-dashoffset: 0;
+            transition: stroke-dasharray 1s ease-in-out;
+            animation: draw-circle 2s ease-in-out;
+          }
+        }
+
+        .circle-center {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          text-align: center;
+
+          .percentage {
+            display: block;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-color);
+            line-height: 1;
+          }
+
+          .label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+          }
+        }
+      }
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+
+        .legend-color {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+
+          &.paid {
+            background: var(--primary-color);
+          }
+
+          &.remaining {
+            background: rgba(var(--primary-rgb), 0.3);
+          }
+        }
+      }
+    }
+  }
+
+  .interests-card {
+    .interests-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+
+      .interest-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        border-radius: 12px;
+
+        &.paid {
+          background: rgba(76, 175, 80, 0.1);
+          border-left: 4px solid #4caf50;
+        }
+
+        &.remaining {
+          background: rgba(255, 152, 0, 0.1);
+          border-left: 4px solid #ff9800;
+        }
+
+        &.total {
+          background: rgba(33, 150, 243, 0.1);
+          border-left: 4px solid #2196f3;
+        }
+
+        .interest-label {
+          font-weight: 500;
+          color: #1a1a1a;
+          font-size: 14px;
+        }
+
+        .interest-value {
+          font-weight: 600;
+          font-size: 16px;
+          color: #1a1a1a;
+        }
+      }
+    }
+  }
+
+  .top-loan-card,
+  .next-payment-card {
+    .top-loan-info,
+    .next-payment-info {
+      text-align: center;
+      margin-bottom: 16px;
+
+      h4 {
+        margin: 0 0 8px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+
+      .loan-amount,
+      .payment-amount {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin: 8px 0;
+        background: linear-gradient(45deg, var(--primary-color), #64b5f6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .loan-type,
+      .payment-number {
+        color: #666;
+        margin: 0;
+        font-size: 14px;
+      }
+    }
+
+    .pay-button {
+      width: 100%;
+      height: 48px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+
+      mat-icon {
+        margin-right: 8px;
+      }
+    }
+  }
+
+  .insights-card {
+    .insights-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+
+      .insight-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 12px;
+        background: rgba(var(--primary-rgb), 0.05);
+        border-left: 4px solid var(--primary-color);
+
+        .insight-icon {
+          color: var(--primary-color);
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+          flex-shrink: 0;
+        }
+
+        .insight-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          .insight-title {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+          }
+
+          .insight-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+          }
+        }
+      }
+    }
+  }
+
+  .quick-actions-card {
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+
+      button {
+        height: 56px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateY(-2px);
+        }
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+  }
+
+  // Chart container for future use
+  .chart-container {
+    height: 300px;
+    margin: 20px 0;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 20px;
+  }
+
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .stats-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .content-grid {
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .quick-actions-card .actions-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px;
+
+    .monthly-payment-card .monthly-amount {
+      font-size: 28px;
+    }
+
+    .stat-card mat-card-content {
+      padding: 16px !important;
+
+      .stat-content h3 {
+        font-size: 24px;
+      }
+    }
+  }
+}
+
+// Animation keyframes
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes draw-circle {
+  from {
+    stroke-dasharray: 0, 251.2;
+  }
+  to {
+    stroke-dasharray: var(--target-dash, 0), 251.2;
+  }
+}
+
+.dashboard-container > * {
+  animation: slideInUp 0.6s ease-out;
+}
+
+.dashboard-container > *:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.dashboard-container > *:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.dashboard-container > *:nth-child(3) {
+  animation-delay: 0.3s;
+}

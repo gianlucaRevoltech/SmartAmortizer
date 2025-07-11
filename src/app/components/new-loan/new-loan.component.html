@@ -1,0 +1,125 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Aggiungi un nuovo finanziamento</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <form [formGroup]="loanForm" (ngSubmit)="onSubmit()">
+      <mat-form-field appearance="fill">
+        <mat-label>Nome</mat-label>
+        <input matInput formControlName="name" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Tipo</mat-label>
+        <mat-select formControlName="type">
+          <mat-option value="House">Casa</mat-option>
+          <mat-option value="Car">Auto</mat-option>
+          <mat-option value="Appliance">Elettrodomestico</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Importo totale</mat-label>
+        <input
+          matInput
+          type="text"
+          formControlName="totalAmount"
+          placeholder="Es: 26.789,42"
+          (input)="formatCurrency($event)"
+          (blur)="validateCurrency($event)"
+        />
+        <span matSuffix>€</span>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Tasso di interesse - T.A.N. (%)</mat-label>
+        <input
+          matInput
+          type="number"
+          formControlName="interestRate"
+          step="0.01"
+        />
+      </mat-form-field>
+
+      <!-- Optional T.A.E.G. field -->
+      <mat-form-field appearance="fill">
+        <mat-label>T.A.E.G. (%) - Opzionale</mat-label>
+        <input matInput type="number" formControlName="taeg" step="0.01" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Numero di rate</mat-label>
+        <input matInput type="number" formControlName="installments" />
+      </mat-form-field>
+
+      <!-- Expandable section for car financing details -->
+      <div
+        *ngIf="loanForm.get('type')?.value === 'Car'"
+        class="car-details-section"
+      >
+        <h4>Dettagli Finanziamento Auto (Opzionali)</h4>
+
+        <mat-form-field appearance="fill">
+          <mat-label>Prezzo Veicolo</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="vehiclePrice"
+            placeholder="Es: 28.671,54"
+            (input)="formatCurrency($event)"
+            (blur)="validateCurrency($event)"
+          />
+          <span matSuffix>€</span>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill">
+          <mat-label>Anticipo</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="downPayment"
+            placeholder="Es: 9.000,00"
+            (input)="formatCurrency($event)"
+            (blur)="validateCurrency($event)"
+          />
+          <span matSuffix>€</span>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill">
+          <mat-label>Totale Servizi</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="totalServices"
+            placeholder="Es: 6.722,88"
+            (input)="formatCurrency($event)"
+            (blur)="validateCurrency($event)"
+          />
+          <span matSuffix>€</span>
+        </mat-form-field>
+
+        <mat-form-field appearance="fill">
+          <mat-label>Spese Istruttoria</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="practiceExpenses"
+            placeholder="Es: 395,00"
+            (input)="formatCurrency($event)"
+            (blur)="validateCurrency($event)"
+          />
+          <span matSuffix>€</span>
+        </mat-form-field>
+      </div>
+
+      <button
+        mat-raised-button
+        color="primary"
+        type="submit"
+        [disabled]="!loanForm.valid"
+      >
+        Aggiungi
+      </button>
+    </form>
+  </mat-card-content>
+</mat-card>
