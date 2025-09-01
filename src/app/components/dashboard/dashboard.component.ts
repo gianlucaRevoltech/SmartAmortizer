@@ -396,4 +396,28 @@ export class DashboardComponent implements OnInit {
       (this.stats.totalInstallmentsPaid / totalInstallments) * 100
     );
   }
+
+  // Metodi per il nuovo template
+  getTotalPaidAmount(): number {
+    return this.loanItems.reduce((total, loan) => {
+      const amortizationPlan = loan.amortizationPlan || [];
+      const paidAmount = amortizationPlan
+        .filter((item) => item.paid)
+        .reduce((paidTotal, item) => paidTotal + item.amount, 0);
+      return total + paidAmount;
+    }, 0);
+  }
+
+  getRecentLoans(): any[] {
+    return this.loanItems.map((loan) => ({
+      ...loan,
+      statusClass:
+        loan.paidInstallments >= loan.installments ? 'paid' : 'unpaid',
+      statusText:
+        loan.paidInstallments >= loan.installments ? 'Completato' : 'In Corso',
+      completionPercentage: Math.round(
+        (loan.paidInstallments / loan.installments) * 100
+      ),
+    }));
+  }
 }

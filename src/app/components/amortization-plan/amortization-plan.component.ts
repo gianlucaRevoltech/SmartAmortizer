@@ -136,6 +136,22 @@ export class AmortizationPlanComponent implements OnInit {
     }, 0);
   }
 
+  getTotalPaidAmount(): number {
+    return this.loans.reduce((total, loan) => {
+      const amortizationPlan = loan.amortizationPlan || [];
+      const paidAmount = amortizationPlan
+        .filter((item: AmortizationItem) => item.paid)
+        .reduce((paidTotal, item) => paidTotal + item.amount, 0);
+      return total + paidAmount;
+    }, 0);
+  }
+
+  getTotalRemainingAmount(): number {
+    return this.loans.reduce((total, loan) => {
+      return total + loan.remainingAmount;
+    }, 0);
+  }
+
   hasPaymentsToUndo(loan: LoanWithStatus): boolean {
     const amortizationPlan = loan.amortizationPlan || [];
     return amortizationPlan.some((item: AmortizationItem) => item.paid);
@@ -159,10 +175,12 @@ export class AmortizationPlanComponent implements OnInit {
     );
 
     if (installment && !installment.paid) {
+      // Pay the installment
       this.amortizationService.payInstallment(
         this.selectedLoanItem,
         installmentNumber
       );
+
       this.snackBar.open(
         `Rata #${installmentNumber} pagata con successo!`,
         'Chiudi',
@@ -194,6 +212,9 @@ export class AmortizationPlanComponent implements OnInit {
         installment.paymentDate = null;
         this.selectedLoanItem.paidInstallments--;
         this.selectedLoanItem.remainingAmount += installment.principal;
+
+        // Salva le modifiche nel DataService
+        this.dataService.updateLoanItem(this.selectedLoanItem);
 
         this.snackBar.open(
           `Pagamento della rata #${installmentNumber} annullato!`,
@@ -338,14 +359,22 @@ export class AmortizationPlanComponent implements OnInit {
   onResetData(): void {
     if (
       confirm(
-        'Sei sicuro di voler cancellare tutti i dati e ricominciare da capo? Questa azione non può essere annullata.'
+        'Sei sicuro di voler cancellare tutti i dati e ricominciare da capo? Questa azione pulirà anche i piani di ammortamento con date errate.'
       )
     ) {
+      // Prima pulisci i piani di ammortamento corrotti
+      this.dataService.clearAmortizationPlans();
+
+      // Poi reset completo dei dati
       this.dataService.resetToInitialData().subscribe({
         next: () => {
-          this.snackBar.open('Dati ripristinati con successo!', 'Chiudi', {
-            duration: 3000,
-          });
+          this.snackBar.open(
+            'Dati ripristinati con successo! Piano di ammortamento aggiornato.',
+            'Chiudi',
+            {
+              duration: 4000,
+            }
+          );
           this.loadLoans();
         },
         error: (error: any) => {

@@ -25,6 +25,7 @@ export interface AmortizationItem {
   amount: number;
   principal: number;
   interest: number;
+  insurance: number; // Importo assicurazione per questa rata
   remainingBalance: number;
   paid: boolean;
 }

@@ -96,19 +96,19 @@ export class DataService {
     return [];
   }
 
-  // Method to create initial real-world loan from vehicle financing document
+  // Method to create initial real-world loan from Stellantis Financial Services document
   createInitialLoanData(): Observable<LoanItem[]> {
     const vehicleLoan: LoanItem = {
       id: 1,
-      name: 'Finanziamento Veicolo',
+      name: 'Finanziamento Veicolo - Stellantis',
       type: 'Car',
-      totalAmount: 26789.42, // Capitale finanziato
+      totalAmount: 26789.42, // Capitale finanziato dal documento ufficiale
       remainingAmount: 26789.42, // All'inizio tutto è da pagare
-      interestRate: 8.01, // T.A.N.
+      interestRate: 8.01, // T.A.N. dal documento ufficiale
       installments: 96, // 96 rate mensili (8 anni)
       paidInstallments: 0,
       amortizationPlan: [], // Will be calculated by AmortizationService
-      // Additional details from the document
+      // Additional details from Stellantis document
       taeg: 9.11, // T.A.E.G.
       vehiclePrice: 28671.54, // Prezzo di vendita del veicolo
       downPayment: 9000.0, // Importo anticipo
@@ -128,6 +128,16 @@ export class DataService {
     localStorage.removeItem(this.STORAGE_KEY);
     this.loanItems = [];
     return this.createInitialLoanData(); // Use real data instead of empty
+  }
+
+  // Method to force clear amortization plans (useful when dates are wrong)
+  clearAmortizationPlans(): void {
+    this.loanItems.forEach((loan) => {
+      loan.amortizationPlan = [];
+      loan.paidInstallments = 0;
+      loan.remainingAmount = loan.totalAmount;
+    });
+    this.saveToStorage();
   }
 
   private handleError(error: any) {

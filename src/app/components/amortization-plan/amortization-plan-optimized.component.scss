@@ -54,7 +54,8 @@
     align-items: center;
   }
 
-  .new-loan-btn, .reset-btn {
+  .new-loan-btn,
+  .reset-btn {
     padding: 12px 24px;
     font-weight: 600;
     border-radius: var(--border-radius);
@@ -152,7 +153,11 @@
     background: linear-gradient(90deg, rgba(244, 67, 54, 0.02), transparent);
 
     &:hover {
-      background: linear-gradient(90deg, rgba(244, 67, 54, 0.05), rgba(244, 67, 54, 0.01));
+      background: linear-gradient(
+        90deg,
+        rgba(244, 67, 54, 0.05),
+        rgba(244, 67, 54, 0.01)
+      );
     }
   }
 
@@ -161,7 +166,11 @@
     background: linear-gradient(90deg, rgba(76, 175, 80, 0.02), transparent);
 
     &:hover {
-      background: linear-gradient(90deg, rgba(76, 175, 80, 0.05), rgba(76, 175, 80, 0.01));
+      background: linear-gradient(
+        90deg,
+        rgba(76, 175, 80, 0.05),
+        rgba(76, 175, 80, 0.01)
+      );
     }
   }
 }
@@ -182,9 +191,15 @@
     color: white;
     font-size: 18px;
 
-    &.House { background: #2196f3; }
-    &.Car { background: #ff9800; }
-    &.Appliance { background: #9c27b0; }
+    &.House {
+      background: #2196f3;
+    }
+    &.Car {
+      background: #ff9800;
+    }
+    &.Appliance {
+      background: #9c27b0;
+    }
   }
 
   .loan-info {
@@ -328,35 +343,45 @@
       background-color: var(--primary-color);
       color: white;
 
-      &:hover { background-color: #303f9f; }
+      &:hover {
+        background-color: #303f9f;
+      }
     }
 
     &.pay-button:not(:disabled) {
       background-color: var(--success-color);
       color: white;
 
-      &:hover { background-color: #388e3c; }
+      &:hover {
+        background-color: #388e3c;
+      }
     }
 
     &.undo-button:not(:disabled) {
       background-color: var(--warning-color);
       color: white;
 
-      &:hover { background-color: #f57c00; }
+      &:hover {
+        background-color: #f57c00;
+      }
     }
 
     &[matTooltip="Modifica finanziamento"] {
       background-color: #607d8b;
       color: white;
 
-      &:hover { background-color: #455a64; }
+      &:hover {
+        background-color: #455a64;
+      }
     }
 
     &[matTooltip="Elimina finanziamento"] {
       background-color: var(--danger-color);
       color: white;
 
-      &:hover { background-color: #d32f2f; }
+      &:hover {
+        background-color: #d32f2f;
+      }
     }
   }
 }
@@ -471,8 +496,12 @@
         font-weight: 700;
         font-size: 16px;
 
-        &.success { color: var(--success-color); }
-        &.danger { color: var(--danger-color); }
+        &.success {
+          color: var(--success-color);
+        }
+        &.danger {
+          color: var(--danger-color);
+        }
       }
     }
   }
@@ -510,7 +539,9 @@
 .installment-row {
   transition: var(--transition);
 
-  &:hover { background-color: #f8f9fa; }
+  &:hover {
+    background-color: #f8f9fa;
+  }
 
   &.unpaid {
     border-left: 3px solid var(--danger-color);
@@ -533,7 +564,9 @@
     border-radius: 50%;
     transition: var(--transition);
 
-    &:hover:not(:disabled) { transform: scale(1.1); }
+    &:hover:not(:disabled) {
+      transform: scale(1.1);
+    }
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
@@ -562,7 +595,9 @@
     align-items: stretch;
     gap: 16px;
 
-    .new-loan-btn { align-self: flex-start; }
+    .new-loan-btn {
+      align-self: flex-start;
+    }
   }
 
   .summary-grid {
@@ -571,12 +606,16 @@
 }
 
 @media (max-width: 768px) {
-  .loans-container { padding: 16px; }
+  .loans-container {
+    padding: 16px;
+  }
 
   .table-container .loans-table {
     font-size: 14px;
 
-    td { padding: 12px 4px; }
+    td {
+      padding: 12px 4px;
+    }
   }
 
   .loan-name-cell {
@@ -591,7 +630,9 @@
     }
   }
 
-  .summary-grid { grid-template-columns: 1fr; }
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {

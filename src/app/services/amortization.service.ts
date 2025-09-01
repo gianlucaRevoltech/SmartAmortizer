@@ -56,15 +56,28 @@ export class AmortizationService {
   }
 
   calculateAmortizationPlan(loanItem: LoanItem): LoanItem {
-    if (loanItem.amortizationPlan && loanItem.amortizationPlan.length > 0) {
-      return loanItem;
-    }
+    // Preserva i pagamenti esistenti se il piano è già presente
+    const existingPlan = loanItem.amortizationPlan || [];
+    const existingPayments = new Map<
+      number,
+      { paid: boolean; paymentDate: Date | null }
+    >();
+
+    // Salva lo stato dei pagamenti esistenti
+    existingPlan.forEach((item) => {
+      if (item.paid) {
+        existingPayments.set(item.installment, {
+          paid: item.paid,
+          paymentDate: item.paymentDate,
+        });
+      }
+    });
 
     const plan: AmortizationItem[] = [];
 
-    // Dati reali dalla foto del piano ammortamento
+    // Dati reali dal documento ufficiale Stellantis Financial Services
     const baseMonthlyPayment = 378.82; // Rata base (capitale + interessi)
-    const insuranceAmount = loanItem.insurancePerInstallment || 0; // 30 EUR per i primi 48 mesi
+    const insuranceAmount = 30.0; // 30 EUR per i primi 48 mesi (fisso dal documento)
     const startDate = new Date(2025, 5, 29); // 29 giugno 2025 (mese 5 = giugno in JS)
 
     let remainingBalance = loanItem.totalAmount;
@@ -78,24 +91,38 @@ export class AmortizationService {
 
       // Assicurazione solo per i primi 48 mesi (4 anni)
       const hasInsurance = i <= 48;
-      const totalAmount =
-        baseMonthlyPayment + (hasInsurance ? insuranceAmount : 0);
+      const insuranceForThisInstallment = hasInsurance ? insuranceAmount : 0;
+      const totalAmount = baseMonthlyPayment + insuranceForThisInstallment;
 
       // Calcola la data di scadenza (mensile)
       const dueDate = new Date(startDate);
       dueDate.setMonth(startDate.getMonth() + (i - 1));
 
+      // Recupera lo stato di pagamento esistente se presente
+      const existingPayment = existingPayments.get(i);
+      const isPaid = existingPayment ? existingPayment.paid : false;
+      const paymentDate = existingPayment ? existingPayment.paymentDate : null;
+
       plan.push({
         installment: i,
         dueDate: dueDate,
-        paymentDate: null,
+        paymentDate: paymentDate,
         amount: totalAmount, // 408.82 per primi 48 mesi, 378.82 per i restanti
         principal: principal,
         interest: interest,
+        insurance: insuranceForThisInstallment, // 30.00 per primi 48 mesi, 0.00 per i restanti
         remainingBalance: remainingBalance > 0 ? remainingBalance : 0,
-        paid: false,
+        paid: isPaid,
       });
     }
+
+    // Aggiorna i contatori basandosi sui pagamenti esistenti
+    loanItem.paidInstallments = plan.filter((item) => item.paid).length;
+    loanItem.remainingAmount =
+      loanItem.totalAmount -
+      plan
+        .filter((item) => item.paid)
+        .reduce((sum, item) => sum + item.principal, 0);
 
     loanItem.amortizationPlan = plan;
     return loanItem;

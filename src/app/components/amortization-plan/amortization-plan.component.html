@@ -376,18 +376,15 @@
           <ng-container matColumnDef="insurance">
             <th mat-header-cell *matHeaderCellDef>Assicurazione</th>
             <td mat-cell *matCellDef="let element">
-              <span *ngIf="hasInsuranceForInstallment(element.installment)">
+              <span *ngIf="element.insurance > 0">
                 {{
-                  getInsuranceForInstallment(
-                    element.installment,
-                    selectedLoanItem
-                  ) | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
+                  element.insurance
+                    | currency : "EUR" : "symbol" : "1.2-2" : "it-IT"
                 }}
               </span>
-              <span
-                *ngIf="!hasInsuranceForInstallment(element.installment)"
-                class="no-insurance"
+              <span *ngIf="element.insurance === 0" class="no-insurance"
                 >-</span
+              >
               >
             </td>
           </ng-container>
@@ -527,6 +524,42 @@
                 }}
               </h3>
               <p>Rate Mensili Totali</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Total Paid Amount (NUOVO: Totale Versato) -->
+      <mat-card class="summary-card success">
+        <mat-card-content>
+          <div class="summary-content">
+            <mat-icon>account_balance</mat-icon>
+            <div class="summary-info">
+              <h3>
+                {{
+                  getTotalPaidAmount()
+                    | currency : "EUR" : "symbol" : "1.0-0" : "it-IT"
+                }}
+              </h3>
+              <p>Totale Versato</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Total Remaining Amount (Debito Rimanente) -->
+      <mat-card class="summary-card danger">
+        <mat-card-content>
+          <div class="summary-content">
+            <mat-icon>account_balance_wallet</mat-icon>
+            <div class="summary-info">
+              <h3>
+                {{
+                  getTotalRemainingAmount()
+                    | currency : "EUR" : "symbol" : "1.0-0" : "it-IT"
+                }}
+              </h3>
+              <p>Debito Rimanente</p>
             </div>
           </div>
         </mat-card-content>
