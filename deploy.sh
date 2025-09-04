@@ -41,9 +41,40 @@ mkdir -p ${APP_DIR}
 mkdir -p ${APP_DIR}/logs
 
 echo -e "${YELLOW}4. Setting up Nginx configuration...${NC}"
-cp nginx.conf ${NGINX_SITES}/${APP_NAME}
+echo "Multiple Nginx configurations available:"
+echo "1. Multi-app on same port (Angular main, Python /api)"
+echo "2. Separate ports (Angular :80, Python :8080)"
+echo "3. Subdomains (if you have a domain)"
+echo "4. Optimal for your setup (Angular :80, Python keeps :8501)"
+echo ""
+read -p "Choose configuration (1-4): " nginx_choice
+
+case $nginx_choice in
+    1)
+        echo "Using multi-app configuration..."
+        cp nginx-multi-app.conf ${NGINX_SITES}/${APP_NAME}
+        ;;
+    2)
+        echo "Using separate ports configuration..."
+        cp nginx-separate-ports.conf ${NGINX_SITES}/${APP_NAME}
+        ;;
+    3)
+        echo "Using subdomain configuration..."
+        cp nginx-subdomain.conf ${NGINX_SITES}/${APP_NAME}
+        ;;
+    4)
+        echo "Using optimal configuration for your setup..."
+        cp nginx-optimal.conf ${NGINX_SITES}/${APP_NAME}
+        ;;
+    *)
+        echo "Invalid choice, using optimal configuration..."
+        cp nginx-optimal.conf ${NGINX_SITES}/${APP_NAME}
+        ;;
+esac
+
 ln -sf ${NGINX_SITES}/${APP_NAME} ${NGINX_ENABLED}/
-rm -f ${NGINX_ENABLED}/default
+# Don't remove default if other apps are using it
+# rm -f ${NGINX_ENABLED}/default
 
 echo -e "${YELLOW}5. Installing application dependencies...${NC}"
 cd ${APP_DIR}
@@ -60,8 +91,13 @@ pm2 startup
 echo -e "${YELLOW}8. Configuring firewall...${NC}"
 ufw allow 22
 ufw allow 80
+if [ "$nginx_choice" = "2" ]; then
+    ufw allow 8080  # Allow port 8080 for separate ports config
+fi
 ufw allow 443
-ufw --force enable
+# Port 8501 is already configured for your Python app
+echo "Firewall rules updated (not forcing enable to avoid disrupting existing setup)"
+echo "Your Python app on port 8501 remains accessible"
 
 echo -e "${YELLOW}9. Starting services...${NC}"
 systemctl enable nginx
