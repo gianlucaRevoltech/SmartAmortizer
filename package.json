@@ -5,6 +5,12 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:prod": "ng build --configuration production",
+    "build:ssr": "npm run build:prod && npm run build:ssr:only",
+    "build:ssr:only": "ng build --configuration production && npm run compile:server",
+    "compile:server": "ng build --configuration production --output-path dist/smart-amortizer/browser && ng run SmartAmortizer:server:production",
+    "serve:ssr": "node dist/smart-amortizer/server/server.mjs",
+    "start:prod": "NODE_ENV=production node dist/smart-amortizer/server/server.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:SmartAmortizer": "node dist/smart-amortizer/server/server.mjs"

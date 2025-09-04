@@ -16,7 +16,6 @@ import { MaterialModule } from './material.module';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { NewLoanComponent } from './components/new-loan/new-loan.component';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
-import { DashboardComponent } from './components/dashboard/dashboard.component';
 
 // Register the Italian locale
 registerLocaleData(localeIt);
@@ -27,7 +26,6 @@ registerLocaleData(localeIt);
     AmortizationPlanComponent,
     NewLoanComponent,
     ConfirmDialogComponent,
-    DashboardComponent,
   ],
   imports: [
     BrowserModule,
