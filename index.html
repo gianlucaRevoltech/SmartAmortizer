@@ -1,0 +1,747 @@
+<title>SmartAmortizer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Saira+Semi+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: cruscotto a colonna singola. In alto il totale, poi i due veicoli, l'andamento nel tempo e il prospetto rata per rata. */
+:root {
+  --bg: #f2f3f5;
+  --surface: #ffffff;
+  --sunken: #eceef1;
+  --track: #dde1e6;
+  --ink: #15171a;
+  --ink-2: #545a62;
+  --ink-3: #80868e;
+  --line: #e1e4e8;
+  --grid: #eceef1;
+  --stelvio: #b5121b;
+  --z650s: #b07d12;
+  --good: #1f7a4d;
+  --focus: #2b5fd9;
+  --next-bg: #f6f1e4;
+  --tip-bg: #15171a;
+  --tip-fg: #f2f3f5;
+  --chip-bg: rgba(12, 13, 15, .72);
+  --chip-fg: #ffffff;
+  --font-display: "Saira Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1113; --surface: #17191c; --sunken: #1f2226; --track: #2c3035;
+    --ink: #eceef0; --ink-2: #a8aeb6; --ink-3: #757b83; --line: #2a2e33; --grid: #23262a;
+    --stelvio: #c42a33; --z650s: #b8871e; --good: #46b07f; --focus: #7aa2ff;
+    --next-bg: #2a2418; --tip-bg: #eceef0; --tip-fg: #15171a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1113; --surface: #17191c; --sunken: #1f2226; --track: #2c3035;
+  --ink: #eceef0; --ink-2: #a8aeb6; --ink-3: #757b83; --line: #2a2e33; --grid: #23262a;
+  --stelvio: #c42a33; --z650s: #b8871e; --good: #46b07f; --focus: #7aa2ff;
+  --next-bg: #2a2418; --tip-bg: #eceef0; --tip-fg: #15171a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body); -webkit-font-smoothing: antialiased; }
+table { font: inherit; border-collapse: collapse; }
+h1, h2, h3, p, dl, dd, ol { margin: 0; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: .005em; text-wrap: balance; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+.num { font-variant-numeric: tabular-nums; }
+.label, dt { font-size: 11.5px; line-height: 1.3; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: var(--c); flex: none; }
+
+.page {
+  max-width: 1120px; margin: 0 auto; display: grid; gap: 28px;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Testata */
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 16px; flex-wrap: wrap; }
+.brand { font-family: var(--font-display); font-weight: 700; font-size: 19px; letter-spacing: .02em; }
+.asof { color: var(--ink-2); font-size: 13.5px; }
+
+/* Totale */
+.hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px 40px; align-items: end; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+.hero-num { font-family: var(--font-display); font-weight: 600; font-size: clamp(52px, 11vw, 96px); line-height: .92; letter-spacing: -.01em; margin: 10px 0 16px; font-variant-numeric: tabular-nums; }
+.hero-num .dec { font-size: .42em; font-weight: 500; color: var(--ink-2); letter-spacing: 0; }
+.split { display: flex; flex-wrap: wrap; gap: 6px 22px; color: var(--ink-2); }
+.split span { display: inline-flex; align-items: center; gap: 8px; }
+.split strong { color: var(--ink); font-weight: 600; }
+.kpis { display: grid; }
+.kpis > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 2px 16px; padding: 12px 0; border-top: 1px solid var(--line); }
+.kpis > div:first-child { border-top: 0; }
+.kpis dd { font-family: var(--font-display); font-size: 25px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.kpis .sub { grid-column: 1 / -1; color: var(--ink-2); font-size: 13px; }
+
+/* Veicoli */
+.vehicles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 20px; }
+.car { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.photo { margin: 0; position: relative; aspect-ratio: 16 / 9; max-width: 100%; background: var(--sunken); }
+.photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.chip { position: absolute; left: 12px; top: 12px; background: var(--chip-bg); color: var(--chip-fg); font-size: 12px; font-weight: 600; letter-spacing: .04em; padding: 5px 10px; border-radius: 999px; backdrop-filter: blur(6px); }
+.car-body { padding: 20px; display: grid; gap: 18px; }
+.car-name { display: flex; align-items: center; gap: 10px; font-size: 27px; line-height: 1.1; }
+.car-meta { color: var(--ink-2); margin-top: 4px; }
+.ticks { display: flex; gap: var(--gap, 2px); height: 20px; }
+.ticks i { flex: 1; min-width: 0; border-radius: 2px; background: var(--track); }
+.ticks i.paid { background: var(--c); }
+.ticks i.next { background: transparent; box-shadow: inset 0 0 0 1.5px var(--c); }
+.ticks-cap { display: flex; justify-content: space-between; gap: 12px; color: var(--ink-2); font-size: 13.5px; margin-top: 8px; }
+.ticks-cap strong { color: var(--ink); }
+.figs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; }
+.figs dd { font-family: var(--font-display); font-size: 23px; font-weight: 600; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.figs .sub { display: block; color: var(--ink-2); font-size: 12.5px; }
+
+details.contract { border-top: 1px solid var(--line); padding-top: 4px; }
+details.contract > summary, details.year > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+details > summary::-webkit-details-marker { display: none; }
+details.contract > summary { padding: 8px 0; font-weight: 600; font-size: 14px; }
+.chev { width: 16px; height: 16px; flex: none; transition: transform .15s; color: var(--ink-3); }
+details[open] > summary .chev { transform: rotate(90deg); }
+.rows { display: grid; padding: 4px 0 6px; }
+.rows > div { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.rows > div:last-child { border-bottom: 0; }
+.rows dt { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 400; color: var(--ink-2); }
+.rows dd { text-align: right; font-variant-numeric: tabular-nums; }
+.rows .strong dt, .rows .strong dd { color: var(--ink); font-weight: 600; }
+
+/* Pannelli */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; display: grid; gap: 16px; min-width: 0; }
+.page > *, .panel > *, .years > * { min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px 20px; flex-wrap: wrap; }
+.panel-head h2 { font-size: 24px; }
+.panel-note { color: var(--ink-2); font-size: 13.5px; margin-top: 2px; }
+.seg { display: inline-flex; background: var(--sunken); border-radius: 999px; padding: 3px; gap: 2px; max-width: 100%; overflow-x: auto; }
+.seg button { border: 0; background: transparent; padding: 7px 14px; border-radius: 999px; font-size: 13.5px; font-weight: 500; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
+.seg button:hover { color: var(--ink); }
+.seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
+
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.chart { position: relative; height: 250px; touch-action: pan-y; }
+.chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.chart text { font: 11.5px var(--font-body); fill: var(--ink-3); font-variant-numeric: tabular-nums; }
+.tip { position: absolute; top: 6px; left: 0; min-width: 190px; background: var(--tip-bg); color: var(--tip-fg); border-radius: 10px; padding: 9px 12px; font-size: 13px; pointer-events: none; box-shadow: 0 6px 20px rgba(0, 0, 0, .18); }
+.tip-h { font-weight: 600; margin-bottom: 4px; }
+.tip-r { display: flex; align-items: center; gap: 8px; }
+.tip-r b { margin-left: auto; font-weight: 500; font-variant-numeric: tabular-nums; }
+.tip-r.tot { border-top: 1px solid currentColor; margin-top: 5px; padding-top: 5px; border-color: color-mix(in srgb, var(--tip-fg) 25%, transparent); }
+.tip-r.tot b { font-weight: 700; }
+
+.periods { list-style: none; padding: 0; display: grid; border-top: 1px solid var(--line); }
+.periods li { display: grid; grid-template-columns: minmax(150px, 1fr) auto minmax(0, 1.4fr); gap: 4px 20px; align-items: baseline; padding: 11px 8px; border-bottom: 1px solid var(--line); }
+.periods li.now { background: var(--next-bg); border-radius: 8px; border-bottom-color: transparent; }
+.periods .when { font-weight: 600; }
+.periods .when small { display: block; font-weight: 400; color: var(--ink-2); font-size: 12.5px; }
+.periods .amt { font-family: var(--font-display); font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.periods .amt small { font-family: var(--font-body); font-size: 12.5px; font-weight: 400; color: var(--ink-2); }
+.periods .parts { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--ink-2); font-size: 13.5px; }
+.periods .parts span { display: inline-flex; align-items: center; gap: 7px; }
+
+/* Prospetto */
+.years { display: grid; }
+details.year { border-top: 1px solid var(--line); }
+details.year > summary { padding: 13px 4px; flex-wrap: wrap; }
+.y { font-family: var(--font-display); font-weight: 600; font-size: 20px; min-width: 52px; }
+.ys { color: var(--ink-2); font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.yst { margin-left: auto; font-size: 12.5px; color: var(--ink-3); }
+.yst.ok { color: var(--good); }
+.tw { overflow-x: auto; padding-bottom: 12px; }
+.tw table { width: 100%; min-width: 560px; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.tw th { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tw td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+.tw th:first-child, .tw td:first-child, .tw th.l, .tw td.l { text-align: left; }
+.tw tr.paid td { color: var(--ink-3); }
+.tw tr.next td { background: var(--next-bg); color: var(--ink); }
+.tw td .ok { color: var(--good); display: inline-flex; vertical-align: -2px; margin-right: 6px; }
+.tw td .ok svg { width: 14px; height: 14px; }
+.pill { display: inline-block; margin-left: 8px; font-size: 11px; font-weight: 600; letter-spacing: .04em; padding: 2px 8px; border-radius: 999px; background: var(--ink); color: var(--surface); vertical-align: 1px; }
+.tw td.strong { font-weight: 600; }
+.tw tr.paid td.strong { font-weight: 500; }
+.muted { color: var(--ink-3); }
+
+/* Note */
+.notes { display: grid; gap: 10px; color: var(--ink-2); font-size: 13px; max-width: 78ch; }
+.notes h2 { font-size: 17px; color: var(--ink); }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.notes a { color: inherit; }
+
+@media (max-width: 760px) {
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .periods li { grid-template-columns: minmax(0, 1fr) auto; }
+  .periods .parts { grid-column: 1 / -1; }
+  .car-body, .panel { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="page">
+  <header class="top">
+    <h1 class="brand">SmartAmortizer</h1>
+    <p class="asof" id="asof"></p>
+  </header>
+
+  <section class="hero" aria-label="Riepilogo">
+    <div>
+      <p class="label">Ancora da pagare</p>
+      <p class="hero-num" id="tot"></p>
+      <p class="split" id="split"></p>
+    </div>
+    <dl class="kpis">
+      <div><dt>Prossima rata</dt><dd id="k-next"></dd><span class="sub" id="k-next-sub"></span></div>
+      <div><dt>Debito residuo</dt><dd id="k-cap"></dd><span class="sub" id="k-cap-sub"></span></div>
+      <div><dt>Ultima rata</dt><dd id="k-end"></dd><span class="sub" id="k-end-sub"></span></div>
+    </dl>
+  </section>
+
+  <section class="vehicles" id="vehicles" aria-label="Finanziamenti"></section>
+
+  <section class="panel" aria-labelledby="h-andamento">
+    <div class="panel-head">
+      <div>
+        <h2 id="h-andamento">Andamento</h2>
+        <p class="panel-note" id="chart-note"></p>
+      </div>
+      <div class="seg" role="tablist" aria-label="Vista grafico">
+        <button type="button" role="tab" id="v-rata" data-view="rata">Rata mensile</button>
+        <button type="button" role="tab" id="v-debito" data-view="debito">Ancora da pagare</button>
+      </div>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="chart" id="chart"><svg id="chart-svg" role="img" aria-label="Grafico"></svg><div class="tip" id="tip" hidden></div></div>
+    <div>
+      <p class="label" style="margin-bottom:8px">Come cambia la rata</p>
+      <ol class="periods" id="periods"></ol>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-prospetto">
+    <div class="panel-head">
+      <div>
+        <h2 id="h-prospetto">Prospetto</h2>
+        <p class="panel-note">Le rate passate risultano pagate in automatico alla scadenza.</p>
+      </div>
+      <div class="seg" role="tablist" aria-label="Vista prospetto">
+        <button type="button" role="tab" id="t-mesi" data-tab="mesi">Mese per mese</button>
+        <button type="button" role="tab" id="t-stelvio" data-tab="stelvio">Stelvio</button>
+        <button type="button" role="tab" id="t-z650s" data-tab="z650s">Z650S</button>
+      </div>
+    </div>
+    <div class="years" id="years"></div>
+  </section>
+
+  <footer class="notes">
+    <h2>Come leggere i numeri</h2>
+    <ul>
+      <li><strong>Ancora da pagare</strong>: la somma di tutte le rate future, con interessi e assicurazione.</li>
+      <li><strong>Debito residuo</strong>: il capitale ancora da restituire, cioè la base di un'eventuale estinzione anticipata (spese escluse).</li>
+      <li>Stelvio: gli interessi usano il tasso implicito nella rata di contratto (378,82 € su 96 mesi, TAN 8,01% arrotondato). Così il piano chiude a zero e gli interessi totali tornano a 9.577,30 €, come sul contratto. Se il 29 non esiste (febbraio), la rata scade l'ultimo giorno del mese.</li>
+      <li>Z650S: TAN non indicato, quindi il debito è la somma delle rate (36 × 210 €).</li>
+      <li>Foto rappresentative da Wikimedia Commons, licenza CC BY-SA 4.0: Stelvio di <a href="https://commons.wikimedia.org/wiki/File:Alfa_Romeo_Stelvio_Wien_25_July_2020_JM_(2).jpg" target="_blank" rel="noopener">Johannes Maximilian</a>, Z650S di <a href="https://commons.wikimedia.org/wiki/File:Kawasaki_Z650S_2026.jpg" target="_blank" rel="noopener">MotorideSA</a>.</li>
+    </ul>
+  </footer>
+</div>
+
+<script>
+// Dati dei finanziamenti. Per aggiungerne uno basta un altro oggetto qui.
+// primaScadenza: [anno, mese 1-12, giorno]; giorno null = non noto (fine mese).
+const FINANZIAMENTI = [
+  {
+    id: 'stelvio',
+    nome: 'Alfa Romeo Stelvio',
+    breve: 'Stelvio',
+    dettaglio: 'Rosso Edizione · Grigio Silverstone',
+    finanziaria: 'Stellantis Financial Services',
+    foto: 'img/stelvio.jpg',
+    fotoAlt: 'Alfa Romeo Stelvio grigia con pinze freno rosse (foto rappresentativa)',
+    fotoPos: '50% 60%',
+    colore: 'var(--stelvio)',
+    capitale: 26789.42,
+    tan: 8.01,
+    taeg: 9.11,
+    numeroRate: 96,
+    rata: 378.82,
+    assicurazione: 30,
+    rateAssicurate: 48,
+    primaScadenza: [2025, 6, 29],
+    contratto: [
+      ['Prezzo veicolo', 28671.54],
+      ['Anticipo', -9000],
+      ['Servizi accessori', 6722.88],
+      ['Spese istruttoria', 395],
+      ['Capitale finanziato', 26789.42, true],
+    ],
+  },
+  {
+    id: 'z650s',
+    nome: 'Kawasaki Z650S',
+    breve: 'Z650S',
+    dettaglio: 'Nero e oro',
+    finanziaria: null,
+    foto: 'img/z650s.jpg',
+    fotoAlt: 'Kawasaki Z650S nera con telaio oro (foto rappresentativa)',
+    fotoPos: '50% 55%',
+    colore: 'var(--z650s)',
+    capitale: null,
+    tan: null,
+    numeroRate: 36,
+    rata: 210,
+    primaScadenza: [2027, 2, 15],
+  },
+];
+
+const $ = (s) => document.querySelector(s);
+const euro = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', useGrouping: 'always' });
+const euroTondo = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0, useGrouping: 'always' });
+const eur = (v) => euro.format(Math.abs(v) < 0.005 ? 0 : v);
+const perc = (v) => v.toLocaleString('it-IT', { maximumFractionDigits: 2 }) + '%';
+const MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+const MESI_LUNGHI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+const meseLabel = (m) => `${MESI[m % 12]} ${Math.floor(m / 12)}`;
+const giornoLabel = (d) => `${d.getDate()} ${MESI[d.getMonth()]} ${d.getFullYear()}`;
+const scadenzaLabel = (r) => (r.giornoNoto ? giornoLabel(r.scadenza) : meseLabel(r.mese));
+const somma = (arr, k) => arr.reduce((s, x) => s + x[k], 0);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const CHECK = '<span class="ok" aria-label="Pagata"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg></span>';
+const CHEV = '<svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5L10.5 8 6 12.5"/></svg>';
+
+// Tasso mensile che, con la rata di contratto, estingue esattamente il capitale.
+function tassoImplicito(capitale, rata, n) {
+  if (rata * n - capitale < 0.01) return 0;
+  let lo = 0, hi = 0.05;
+  for (let k = 0; k < 100; k++) {
+    const r = (lo + hi) / 2;
+    capitale * r / (1 - Math.pow(1 + r, -n)) > rata ? (hi = r) : (lo = r);
+  }
+  return (lo + hi) / 2;
+}
+
+// Ammortamento alla francese: rata costante, interessi sul residuo, assicurazione a parte.
+function piano(f, oggi) {
+  const capitale = f.capitale ?? f.rata * f.numeroRate;
+  const r = f.capitale ? tassoImplicito(f.capitale, f.rata, f.numeroRate) : 0;
+  const [anno0, mese0, giorno] = f.primaScadenza;
+  let residuo = capitale;
+  const rate = [];
+  for (let k = 1; k <= f.numeroRate; k++) {
+    const interessi = residuo * r;
+    const quota = k === f.numeroRate ? residuo : f.rata - interessi;
+    residuo = Math.max(0, residuo - quota);
+    const assicurazione = k <= (f.rateAssicurate || 0) ? f.assicurazione : 0;
+    const mese = anno0 * 12 + (mese0 - 1) + (k - 1);
+    const anno = Math.floor(mese / 12), m = mese % 12;
+    const fineMese = new Date(anno, m + 1, 0).getDate();
+    const scadenza = new Date(anno, m, giorno ? Math.min(giorno, fineMese) : fineMese);
+    rate.push({
+      n: k, mese, scadenza, giornoNoto: !!giorno,
+      quota, interessi, assicurazione,
+      rata: quota + interessi,
+      totale: quota + interessi + assicurazione,
+      residuo,
+      pagata: scadenza < oggi,
+    });
+  }
+  const pagate = rate.filter((x) => x.pagata);
+  const future = rate.filter((x) => !x.pagata);
+  return {
+    ...f, capitale, rate, pagate, future,
+    tassoMensile: r,
+    prossima: future[0] || null,
+    ancora: somma(future, 'totale'),
+    capitaleResiduo: pagate.length ? pagate[pagate.length - 1].residuo : capitale,
+    interessiTotali: somma(rate, 'interessi'),
+    interessiPagati: somma(pagate, 'interessi'),
+    interessiResidui: somma(future, 'interessi'),
+    assicurazioneResidua: somma(future, 'assicurazione'),
+    prima: rate[0],
+    ultima: rate[rate.length - 1],
+  };
+}
+
+function distanza(daMese, aMese) {
+  const tot = aMese - daMese;
+  if (tot <= 0) return 'questo mese';
+  const a = Math.floor(tot / 12), m = tot % 12;
+  const parti = [];
+  if (a) parti.push(a === 1 ? '1 anno' : `${a} anni`);
+  if (m) parti.push(m === 1 ? '1 mese' : `${m} mesi`);
+  return 'tra ' + parti.join(' e ');
+}
+
+let S; // stato calcolato
+
+function calcola(oggi) {
+  const oggi0 = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate());
+  const fin = FINANZIAMENTI.map((f) => piano(f, oggi0));
+  const primoMese = Math.min(...fin.map((f) => f.prima.mese));
+  const ultimoMese = Math.max(...fin.map((f) => f.ultima.mese));
+  const mesi = [];
+  for (let m = primoMese; m <= ultimoMese; m++) {
+    const voci = fin.map((f) => f.rate.find((r) => r.mese === m) || null);
+    const dopo = fin.map((f) => somma(f.rate.filter((r) => r.mese > m), 'totale'));
+    const prima = fin.map((f) => somma(f.rate.filter((r) => r.mese >= m && !r.pagata), 'totale'));
+    mesi.push({
+      mese: m, voci,
+      totale: voci.reduce((s, v) => s + (v ? v.totale : 0), 0),
+      dopo: dopo.reduce((a, b) => a + b, 0),
+      residuoInizio: prima,
+      pagato: voci.every((v) => !v || v.pagata),
+    });
+  }
+  const meseOggi = oggi0.getFullYear() * 12 + oggi0.getMonth();
+  const daPagare = mesi.filter((x) => !x.pagato);
+  const meseProssimo = daPagare.length ? daPagare[0].mese : null;
+  return { oggi: oggi0, meseOggi, fin, mesi, meseProssimo, ultimoMese, primoMese };
+}
+
+function renderRiepilogo() {
+  const { oggi, fin, mesi, meseProssimo, ultimoMese, meseOggi } = S;
+  $('#asof').textContent = `Situazione al ${oggi.getDate()} ${MESI_LUNGHI[oggi.getMonth()]} ${oggi.getFullYear()}`;
+
+  const tot = fin.reduce((s, f) => s + f.ancora, 0);
+  const [intero, dec] = eur(tot).split(',');
+  $('#tot').innerHTML = `${esc(intero)}<span class="dec">,${esc(dec)}</span>`;
+  $('#split').innerHTML = fin.map((f) =>
+    `<span><i class="dot" style="--c:${f.colore}"></i>${esc(f.breve)} <strong class="num">${eur(f.ancora)}</strong></span>`).join('');
+
+  if (meseProssimo != null) {
+    const m = mesi.find((x) => x.mese === meseProssimo);
+    const voci = m.voci.map((v, i) => (v && !v.pagata ? { v, f: fin[i] } : null)).filter(Boolean);
+    $('#k-next').textContent = eur(voci.reduce((s, x) => s + x.v.totale, 0));
+    $('#k-next-sub').textContent = voci.map(({ v, f }) =>
+      `${f.breve} ${v.giornoNoto ? 'il ' + v.scadenza.getDate() + ' ' + MESI[v.scadenza.getMonth()] : 'a ' + meseLabel(v.mese)}`).join(' · ');
+  } else {
+    $('#k-next').textContent = '—';
+    $('#k-next-sub').textContent = 'Tutto saldato';
+  }
+
+  $('#k-cap').textContent = eur(fin.reduce((s, f) => s + f.capitaleResiduo, 0));
+  $('#k-cap-sub').textContent = fin.map((f) => `${f.breve} ${eur(f.capitaleResiduo)}`).join(' · ');
+  $('#k-end').textContent = meseLabel(ultimoMese);
+  $('#k-end-sub').textContent = meseProssimo == null ? 'Finanziamenti chiusi' : `Liberi da rate ${distanza(meseOggi, ultimoMese)}`;
+}
+
+function renderVeicoli() {
+  $('#vehicles').innerHTML = S.fin.map((f) => {
+    const n = f.rate.length, np = f.pagate.length;
+    const stato = !f.prossima ? 'Saldato' : np === 0 ? `Parte a ${meseLabel(f.prima.mese)}` : 'In corso';
+    const prossimaN = f.prossima ? f.prossima.n : null;
+    const ticks = f.rate.map((r) => `<i class="${r.pagata ? 'paid' : r.n === prossimaN ? 'next' : ''}"></i>`).join('');
+    const rataOra = f.prossima || f.ultima;
+    const rataSub = rataOra.assicurazione
+      ? `${eur(rataOra.rata)} + ${eur(rataOra.assicurazione)} assicurazione`
+      : np === 0 ? `da ${meseLabel(f.prima.mese)}` : 'nessun extra';
+
+    const righe = [];
+    if (f.finanziaria) righe.push(['Finanziaria', f.finanziaria]);
+    (f.contratto || []).forEach(([k, v, strong]) => righe.push([k, eur(v), strong]));
+    if (f.tan != null) righe.push(['TAN / TAEG', `${perc(f.tan)} / ${perc(f.taeg)}`]);
+    else righe.push(['TAN', 'non indicato']);
+    righe.push(['Rata', `${n} × ${eur(f.rata)}`]);
+    if (f.rateAssicurate) {
+      const fine = f.rate[f.rateAssicurate - 1];
+      righe.push(['Assicurazione', `${eur(f.assicurazione)} × ${f.rateAssicurate} rate (fino a ${meseLabel(fine.mese)})`]);
+    }
+    righe.push(['Durata', `${meseLabel(f.prima.mese)} – ${meseLabel(f.ultima.mese)}`]);
+    righe.push(['Totale da rimborsare', eur(somma(f.rate, 'totale')), true]);
+    if (f.tassoMensile > 0) {
+      righe.push(['Interessi totali', eur(f.interessiTotali)]);
+      righe.push(['Interessi già pagati', eur(f.interessiPagati)]);
+      righe.push(['Interessi ancora da pagare', eur(f.interessiResidui)]);
+    }
+    if (f.assicurazioneResidua) righe.push(['Assicurazione ancora da pagare', eur(f.assicurazioneResidua)]);
+
+    return `
+    <article class="car" style="--c:${f.colore}">
+      <figure class="photo">
+        <img src="${f.foto}" alt="${esc(f.fotoAlt)}" style="object-position:${f.fotoPos}" loading="lazy">
+        <figcaption class="chip">${esc(stato)}</figcaption>
+      </figure>
+      <div class="car-body">
+        <div>
+          <h3 class="car-name"><i class="dot"></i>${esc(f.nome)}</h3>
+          <p class="car-meta">${esc(f.dettaglio)}${f.finanziaria ? ' · ' + esc(f.finanziaria) : ''}</p>
+        </div>
+        <div>
+          <div class="ticks" style="--gap:${n > 60 ? 1 : 2}px" role="img" aria-label="${np} rate pagate su ${n}">${ticks}</div>
+          <p class="ticks-cap"><span><strong class="num">${np}</strong> di ${n} rate pagate</span><span class="num">${Math.round((np / n) * 100)}%</span></p>
+        </div>
+        <dl class="figs">
+          <div><dt>Ancora da pagare</dt><dd>${eur(f.ancora)}</dd><span class="sub">${f.future.length} rate</span></div>
+          <div><dt>Debito residuo</dt><dd>${eur(f.capitaleResiduo)}</dd><span class="sub">${f.tassoMensile > 0 ? 'capitale da restituire' : 'senza interessi indicati'}</span></div>
+          <div><dt>Rata</dt><dd>${eur(rataOra.totale)}</dd><span class="sub">${rataSub}</span></div>
+          <div><dt>${f.prossima ? 'Prossima scadenza' : 'Ultima rata'}</dt><dd>${f.prossima ? scadenzaLabel(f.prossima) : scadenzaLabel(f.ultima)}</dd><span class="sub">ultima ${meseLabel(f.ultima.mese)}</span></div>
+        </dl>
+        <details class="contract">
+          <summary>${CHEV}Dati del contratto</summary>
+          <dl class="rows">${righe.map(([k, v, s]) => `<div${s ? ' class="strong"' : ''}><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+        </details>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+/* ---------- Grafico ---------- */
+let vistaGrafico = 'rata';
+
+function tacche(max) {
+  const grezzo = max / 4;
+  const p = Math.pow(10, Math.floor(Math.log10(grezzo)));
+  const passo = [1, 2, 2.5, 5, 10].map((k) => k * p).find((s) => s >= grezzo);
+  const top = Math.ceil(max / passo) * passo;
+  const t = [];
+  for (let v = 0; v <= top + 1e-9; v += passo) t.push(v);
+  return { t, top };
+}
+
+function renderGrafico() {
+  const svg = $('#chart-svg'), box = $('#chart'), tip = $('#tip');
+  const W = Math.max(280, box.clientWidth), H = box.clientHeight;
+  const M = { t: 12, r: 8, b: 26, l: 62 };
+  const iw = W - M.l - M.r, ih = H - M.t - M.b;
+  const fin = S.fin;
+  const mesi = S.mesi.filter((x) => S.meseProssimo != null && x.mese >= S.meseProssimo);
+  if (!mesi.length) { svg.innerHTML = ''; return; }
+  const debito = vistaGrafico === 'debito';
+  $('#chart-note').textContent = debito
+    ? 'Quanto resta da pagare all’inizio di ogni mese, con interessi e assicurazione.'
+    : 'Quanto esce ogni mese, assicurazione inclusa.';
+
+  // valori per serie: in "rata" uno per mese, in "debito" un punto in più (saldato)
+  const valori = debito
+    ? [...mesi.map((m) => m.residuoInizio), fin.map(() => 0)]
+    : mesi.map((m) => m.voci.map((v) => (v ? v.totale : 0)));
+  const max = Math.max(...valori.map((v) => v.reduce((a, b) => a + b, 0)));
+  const { t, top } = tacche(max);
+  const y = (v) => M.t + ih - (v / top) * ih;
+  const fmtY = (v) => euroTondo.format(v);
+
+  let g = '';
+  t.forEach((v) => {
+    g += `<line x1="${M.l}" x2="${W - M.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(${v === 0 ? '--line' : '--grid'})" stroke-width="1"/>`;
+    g += `<text x="${M.l - 8}" y="${y(v) + 4}" text-anchor="end">${fmtY(v)}</text>`;
+  });
+
+  const n = mesi.length;
+  const band = debito ? iw / n : iw / n;
+  const xc = (i) => (debito ? M.l + i * band : M.l + i * band + band / 2);
+
+  // etichette anni sui mesi di gennaio
+  let fineUltima = -Infinity;
+  const etichette = [{ i: 0, txt: meseLabel(mesi[0].mese) }];
+  mesi.forEach((m, i) => { if (m.mese % 12 === 0 && i > 0) etichette.push({ i, txt: String(m.mese / 12) }); });
+  etichette.forEach(({ i, txt }, k) => {
+    const larghezza = txt.length * 6.5;
+    const inizio = k === 0 ? M.l : xc(i) - larghezza / 2;
+    if (inizio < fineUltima + 10) return;
+    g += `<text x="${k === 0 ? M.l : xc(i)}" y="${H - 6}" text-anchor="${k === 0 ? 'start' : 'middle'}">${txt}</text>`;
+    fineUltima = inizio + larghezza;
+  });
+
+  let marks = '';
+  if (!debito) {
+    const bw = Math.max(1, band * 0.7);
+    const arrotonda = (x, y0, w, h, r) => {
+      if (h <= 0.5) return '';
+      r = Math.min(r, w / 2, h);
+      return `M${x},${y0 + h}V${y0 + r}Q${x},${y0} ${x + r},${y0}H${x + w - r}Q${x + w},${y0} ${x + w},${y0 + r}V${y0 + h}Z`;
+    };
+    valori.forEach((vs, i) => {
+      const x = M.l + i * band + (band - bw) / 2;
+      let base = 0;
+      const segmenti = vs.map((v, s) => ({ v, s })).filter((d) => d.v > 0);
+      segmenti.forEach(({ v, s }, k) => {
+        const yTop = y(base + v), yBot = y(base) - (k > 0 ? 2 : 0);
+        const ultimo = k === segmenti.length - 1;
+        const d = ultimo ? arrotonda(x, yTop, bw, yBot - yTop, 4) : `M${x},${yTop}H${x + bw}V${yBot}H${x}Z`;
+        marks += `<path class="bar" data-i="${i}" d="${d}" fill="${fin[s].colore}"/>`;
+        base += v;
+      });
+    });
+  } else {
+    let base = valori.map(() => 0);
+    fin.forEach((f, s) => {
+      const sopra = valori.map((v, i) => base[i] + v[s]);
+      if (sopra.every((v, i) => v === base[i])) { base = sopra; return; }
+      const xs = valori.map((_, i) => M.l + i * band);
+      const linea = xs.map((x, i) => `${i ? 'L' : 'M'}${x},${y(sopra[i])}`).join('');
+      const sotto = xs.map((x, i) => `L${x},${y(base[i])}`).reverse().join('');
+      // il bordo superiore si ferma quando la serie è saldata, per non coprire quella sotto
+      const attivi = xs.map((_, i) => valori[i][s] > 0 || (i > 0 && valori[i - 1][s] > 0));
+      const bordo = xs.map((x, i) => (attivi[i] ? `${i && attivi[i - 1] ? 'L' : 'M'}${x},${y(sopra[i])}` : '')).join('');
+      marks += `<path d="${linea}${sotto}Z" fill="${f.colore}" fill-opacity=".22"/>`;
+      marks += `<path d="${bordo}" fill="none" stroke="${f.colore}" stroke-width="2" stroke-linejoin="round"/>`;
+      base = sopra;
+    });
+  }
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('aria-label', debito
+    ? `Ancora da pagare da ${meseLabel(mesi[0].mese)} a ${meseLabel(S.ultimoMese)}`
+    : `Rata mensile da ${meseLabel(mesi[0].mese)} a ${meseLabel(S.ultimoMese)}`);
+  svg.innerHTML = `${g}<g id="marks">${marks}</g><g id="hover"></g><rect x="${M.l}" y="${M.t}" width="${iw}" height="${ih}" fill="transparent" id="hit"/>`;
+
+  const hover = svg.querySelector('#hover');
+  const mostra = (px) => {
+    const pts = debito ? n + 1 : n;
+    let i = debito ? Math.round((px - M.l) / band) : Math.floor((px - M.l) / band);
+    i = Math.max(0, Math.min(pts - 1, i));
+    const vs = valori[i];
+    const totale = vs.reduce((a, b) => a + b, 0);
+    const titolo = debito
+      ? (i === n ? `Dopo ${meseLabel(mesi[n - 1].mese)}` : `Inizio ${meseLabel(mesi[i].mese)}`)
+      : meseLabel(mesi[i].mese);
+    tip.innerHTML = `<div class="tip-h">${titolo}</div>` +
+      fin.map((f, s) => `<div class="tip-r"><i class="dot" style="--c:${f.colore}"></i>${esc(f.breve)}<b>${vs[s] ? eur(vs[s]) : '—'}</b></div>`).join('') +
+      `<div class="tip-r tot">${debito ? 'Ancora da pagare' : 'Totale mese'}<b>${eur(totale)}</b></div>`;
+    tip.hidden = false;
+    const x = debito ? M.l + i * band : xc(i);
+    const tw = tip.offsetWidth;
+    let left = x + 14;
+    if (left + tw > W) left = x - tw - 14;
+    tip.style.left = Math.max(0, left) + 'px';
+    if (debito) {
+      let acc = 0;
+      hover.innerHTML = `<line x1="${x}" x2="${x}" y1="${M.t}" y2="${M.t + ih}" stroke="var(--ink-3)" stroke-width="1"/>` +
+        fin.map((f, s) => { acc += vs[s]; return vs[s] ? `<circle cx="${x}" cy="${y(acc)}" r="4.5" fill="${f.colore}" stroke="var(--surface)" stroke-width="2"/>` : ''; }).join('');
+    } else {
+      svg.querySelectorAll('.bar').forEach((b) => b.setAttribute('opacity', +b.dataset.i === i ? '1' : '.4'));
+    }
+  };
+  const nascondi = () => {
+    tip.hidden = true;
+    hover.innerHTML = '';
+    svg.querySelectorAll('.bar').forEach((b) => b.removeAttribute('opacity'));
+  };
+  const hit = svg.querySelector('#hit');
+  const px = (e) => (e.clientX - svg.getBoundingClientRect().left);
+  hit.addEventListener('pointermove', (e) => mostra(px(e)));
+  hit.addEventListener('pointerdown', (e) => mostra(px(e)));
+  hit.addEventListener('pointerleave', nascondi);
+}
+
+function renderPeriodi() {
+  const mesi = S.mesi.filter((x) => S.meseProssimo != null && x.mese >= S.meseProssimo);
+  const periodi = [];
+  mesi.forEach((m) => {
+    const chiave = m.voci.map((v) => (v ? v.totale.toFixed(2) : '0')).join('|');
+    const ultimo = periodi[periodi.length - 1];
+    if (ultimo && ultimo.chiave === chiave) ultimo.a = m.mese;
+    else periodi.push({ chiave, da: m.mese, a: m.mese, m });
+  });
+  const intervallo = (da, a) => {
+    if (da === a) return meseLabel(da);
+    if (Math.floor(da / 12) === Math.floor(a / 12)) return `${MESI[da % 12]} – ${meseLabel(a)}`;
+    return `${meseLabel(da)} – ${meseLabel(a)}`;
+  };
+  $('#periods').innerHTML = periodi.map((p, k) => {
+    const durata = p.a - p.da + 1;
+    const parti = p.m.voci.map((v, s) => (v ? `<span><i class="dot" style="--c:${S.fin[s].colore}"></i>${esc(S.fin[s].breve)} ${eur(v.totale)}${v.assicurazione ? ' <span class="muted">(con assicurazione)</span>' : ''}</span>` : '')).join('');
+    return `<li class="${k === 0 ? 'now' : ''}">
+      <span class="when">${intervallo(p.da, p.a)}<small>${durata === 1 ? '1 mese' : durata + ' mesi'}${k === 0 ? ' · adesso' : ''}</small></span>
+      <span class="amt">${eur(p.m.totale)}<small> /mese</small></span>
+      <span class="parts">${parti}</span>
+    </li>`;
+  }).join('');
+}
+
+/* ---------- Prospetto ---------- */
+let tabProspetto = 'mesi';
+
+function renderProspetto() {
+  const { fin, mesi, meseProssimo } = S;
+  const annoAperto = meseProssimo != null ? Math.floor(meseProssimo / 12) : null;
+  const aperto = (anno) => annoAperto != null && (anno === annoAperto || anno === annoAperto + 1);
+  const gruppi = new Map();
+  let righe, intestazione;
+
+  if (tabProspetto === 'mesi') {
+    intestazione = `<tr><th>Mese</th>${fin.map((f) => `<th>${esc(f.breve)}</th>`).join('')}<th>Totale mese</th><th>Ancora da pagare</th></tr>`;
+    righe = mesi.map((m) => {
+      const prossimo = m.mese === meseProssimo;
+      return {
+        anno: Math.floor(m.mese / 12), pagata: m.pagato, importo: m.totale,
+        html: `<tr class="${m.pagato ? 'paid' : prossimo ? 'next' : ''}">
+          <td>${m.pagato ? CHECK : ''}${meseLabel(m.mese)}${prossimo ? '<span class="pill">Prossimo</span>' : ''}</td>
+          ${m.voci.map((v) => `<td>${v ? eur(v.totale) : '<span class="muted">—</span>'}</td>`).join('')}
+          <td class="strong">${eur(m.totale)}</td>
+          <td>${eur(m.dopo)}</td></tr>`,
+      };
+    });
+  } else {
+    const f = fin.find((x) => x.id === tabProspetto);
+    const conInteressi = f.tassoMensile > 0, conAssic = f.rate.some((r) => r.assicurazione);
+    intestazione = `<tr><th>N.</th><th class="l">Scadenza</th>${conInteressi ? '<th>Capitale</th><th>Interessi</th>' : ''}${conAssic ? '<th>Assicurazione</th>' : ''}<th>Rata</th><th>${conInteressi ? 'Debito residuo' : 'Ancora da pagare'}</th></tr>`;
+    righe = f.rate.map((r) => {
+      const prossima = f.prossima && r.n === f.prossima.n;
+      const dopo = conInteressi ? r.residuo : (f.rate.length - r.n) * f.rata;
+      return {
+        anno: Math.floor(r.mese / 12), pagata: r.pagata, importo: r.totale,
+        html: `<tr class="${r.pagata ? 'paid' : prossima ? 'next' : ''}">
+          <td>${r.pagata ? CHECK : ''}${r.n}</td>
+          <td class="l">${scadenzaLabel(r)}${prossima ? '<span class="pill">Prossima</span>' : ''}</td>
+          ${conInteressi ? `<td>${eur(r.quota)}</td><td>${eur(r.interessi)}</td>` : ''}
+          ${conAssic ? `<td>${r.assicurazione ? eur(r.assicurazione) : '<span class="muted">—</span>'}</td>` : ''}
+          <td class="strong">${eur(r.totale)}</td>
+          <td>${eur(dopo)}</td></tr>`,
+      };
+    });
+  }
+
+  righe.forEach((r) => {
+    if (!gruppi.has(r.anno)) gruppi.set(r.anno, []);
+    gruppi.get(r.anno).push(r);
+  });
+  const unita = tabProspetto === 'mesi' ? ['mese', 'mesi'] : ['rata', 'rate'];
+  $('#years').innerHTML = [...gruppi].map(([anno, rr]) => {
+    const pagate = rr.filter((r) => r.pagata).length;
+    const stato = pagate === rr.length ? '<span class="yst ok">Tutto pagato</span>'
+      : pagate ? `<span class="yst">${pagate} di ${rr.length} pagat${tabProspetto === 'mesi' ? 'i' : 'e'}</span>` : '<span class="yst"></span>';
+    return `<details class="year"${aperto(anno) ? ' open' : ''}>
+      <summary>${CHEV}<span class="y">${anno}</span><span class="ys">${rr.length} ${rr.length === 1 ? unita[0] : unita[1]} · ${eur(somma(rr, 'importo'))}</span>${stato}</summary>
+      <div class="tw"><table><thead>${intestazione}</thead><tbody>${rr.map((r) => r.html).join('')}</tbody></table></div>
+    </details>`;
+  }).join('');
+}
+
+/* ---------- Avvio ---------- */
+function leggi(k, def) { try { return localStorage.getItem(k) || def; } catch (e) { return def; } }
+function salva(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage non disponibile */ } }
+
+function aggiornaTab() {
+  document.querySelectorAll('[data-view]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.view === vistaGrafico)));
+  document.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tabProspetto)));
+}
+
+function disegna(oggi = new Date()) {
+  S = calcola(oggi);
+  $('#legend').innerHTML = S.fin.map((f) => `<span><i class="dot" style="--c:${f.colore}"></i>${esc(f.nome)}</span>`).join('');
+  renderRiepilogo();
+  renderVeicoli();
+  renderGrafico();
+  renderPeriodi();
+  renderProspetto();
+  aggiornaTab();
+}
+
+vistaGrafico = leggi('sa-grafico', 'rata') === 'debito' ? 'debito' : 'rata';
+tabProspetto = ['mesi', 'stelvio', 'z650s'].includes(leggi('sa-tab', 'mesi')) ? leggi('sa-tab', 'mesi') : 'mesi';
+
+document.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => {
+  vistaGrafico = b.dataset.view; salva('sa-grafico', vistaGrafico); aggiornaTab(); renderGrafico();
+}));
+document.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => {
+  tabProspetto = b.dataset.tab; salva('sa-tab', tabProspetto); aggiornaTab(); renderProspetto();
+}));
+new ResizeObserver(() => S && renderGrafico()).observe($('#chart'));
+
+disegna();
+</script>

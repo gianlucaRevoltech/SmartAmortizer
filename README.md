@@ -1,27 +1,24 @@
 # SmartAmortizer
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.20.
+Una pagina sola per tenere d'occhio i finanziamenti: quanto resta da pagare, il debito residuo, come cambia la rata nel tempo e il prospetto rata per rata.
 
-## Development server
+Finanziamenti caricati:
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+- **Alfa Romeo Stelvio** (Rosso Edizione, Grigio Silverstone): Stellantis Financial Services, 26.789,42 € in 96 rate da 378,82 € + 30 € di assicurazione per le prime 48, dal 29 giugno 2025.
+- **Kawasaki Z650S** (nero e oro): 36 rate da 210 €, dal 15 febbraio 2027 al 15 gennaio 2030.
 
-## Code scaffolding
+## Uso
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+Apri `index.html` nel browser. Non serve build né server: HTML, CSS e JavaScript sono tutti nel file.
 
-## Build
+Le rate con scadenza passata risultano pagate in automatico, quindi la pagina è sempre aggiornata alla data di oggi.
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+## Modificare i dati
 
-## Running unit tests
+I finanziamenti sono nell'array `FINANZIAMENTI` in cima allo script di `index.html`. Per ognuno: capitale (o `null` se il TAN non è noto), rata, numero di rate, eventuale assicurazione e data della prima scadenza.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+## Foto
 
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Foto rappresentative da Wikimedia Commons, licenza CC BY-SA 4.0:
+[Stelvio](https://commons.wikimedia.org/wiki/File:Alfa_Romeo_Stelvio_Wien_25_July_2020_JM_(2).jpg) di Johannes Maximilian,
+[Z650S](https://commons.wikimedia.org/wiki/File:Kawasaki_Z650S_2026.jpg) di MotorideSA.
