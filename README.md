@@ -19,7 +19,4 @@ I finanziamenti sono nell'array `FINANZIAMENTI` in cima allo script di `index.ht
 
 ## Foto
 
-Foto rappresentative da Wikimedia Commons, ritagliate:
-
-- [Stelvio](https://commons.wikimedia.org/wiki/File:Alfa_Romeo_Stelvio_Suv_Free_Car_Picture_-_Give_Credit_Via_Link.jpg) di Motor Verso ([motorverso.com](https://www.motorverso.com)), CC BY 2.0.
-- [Z650S](https://commons.wikimedia.org/wiki/File:Kawasaki_Z650S_2026.jpg) di MotorideSA, CC BY-SA 4.0, con lo sfondo attenuato (stessa licenza).
+In `img/` ci sono foto rappresentative di veicoli uguali a quelli finanziati, ritagliate in 16:9 (1280×720). Per cambiarle basta sostituire `stelvio.jpg` e `z650s.jpg`.
