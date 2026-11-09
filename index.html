@@ -241,10 +241,10 @@ details.year > summary { padding: 13px 4px; flex-wrap: wrap; }
   <footer class="notes">
     <h2>Come leggere i numeri</h2>
     <ul>
-      <li><strong>Ancora da pagare</strong>: la somma di tutte le rate future, con interessi e assicurazione.</li>
+      <li><strong>Ancora da pagare</strong>: la somma di tutte le rate future, con interessi, assicurazione e spese.</li>
       <li><strong>Debito residuo</strong>: il capitale ancora da restituire, cioè la base di un'eventuale estinzione anticipata (spese escluse).</li>
       <li>Stelvio: gli interessi usano il tasso implicito nella rata di contratto (378,82 € su 96 mesi, TAN 8,01% arrotondato). Così il piano chiude a zero e gli interessi totali tornano a 9.577,30 €, come sul contratto. Se il 29 non esiste (febbraio), la rata scade l'ultimo giorno del mese.</li>
-      <li>Z650S: TAN non indicato, quindi il debito è la somma delle rate (36 × 210 €).</li>
+      <li>Z650S: piano della finanziaria, 6.700 € in 36 rate da 203,68 € (TAN 5,95%, TAEG 10,19%). Ogni addebito comprende 6,52 € di spese, quindi 210,20 € al mese; la prima rata ha 17,75 € in più (227,95 €). In tutto 7.584,95 €, come indica la finanziaria.</li>
       <li>Foto rappresentative di veicoli uguali ai tuoi.</li>
     </ul>
   </footer>
@@ -253,6 +253,7 @@ details.year > summary { padding: 13px 4px; flex-wrap: wrap; }
 <script>
 // Dati dei finanziamenti. Per aggiungerne uno basta un altro oggetto qui.
 // primaScadenza: [anno, mese 1-12, giorno]; giorno null = non noto (fine mese).
+// spese: addebitate con ogni rata; speseIniziali: in più sulla prima rata.
 const FINANZIAMENTI = [
   {
     id: 'stelvio',
@@ -290,11 +291,17 @@ const FINANZIAMENTI = [
     fotoAlt: 'Kawasaki Z650S nera con telaio oro, montagne sullo sfondo (foto rappresentativa)',
     fotoPos: '50% 50%',
     colore: 'var(--z650s)',
-    capitale: null,
-    tan: null,
+    capitale: 6700,
+    tan: 5.95,
+    taeg: 10.19,
     numeroRate: 36,
-    rata: 210,
+    rata: 203.68,
+    spese: 6.52,
+    speseIniziali: 17.75,
     primaScadenza: [2027, 2, 15],
+    contratto: [
+      ['Importo finanziato', 6700, true],
+    ],
   },
 ];
 
@@ -336,15 +343,16 @@ function piano(f, oggi) {
     const quota = k === f.numeroRate ? residuo : f.rata - interessi;
     residuo = Math.max(0, residuo - quota);
     const assicurazione = k <= (f.rateAssicurate || 0) ? f.assicurazione : 0;
+    const spese = (f.spese || 0) + (k === 1 ? f.speseIniziali || 0 : 0);
     const mese = anno0 * 12 + (mese0 - 1) + (k - 1);
     const anno = Math.floor(mese / 12), m = mese % 12;
     const fineMese = new Date(anno, m + 1, 0).getDate();
     const scadenza = new Date(anno, m, giorno ? Math.min(giorno, fineMese) : fineMese);
     rate.push({
       n: k, mese, scadenza, giornoNoto: !!giorno,
-      quota, interessi, assicurazione,
+      quota, interessi, assicurazione, spese,
       rata: quota + interessi,
-      totale: quota + interessi + assicurazione,
+      totale: quota + interessi + assicurazione + spese,
       residuo,
       pagata: scadenza < oggi,
     });
@@ -361,6 +369,7 @@ function piano(f, oggi) {
     interessiPagati: somma(pagate, 'interessi'),
     interessiResidui: somma(future, 'interessi'),
     assicurazioneResidua: somma(future, 'assicurazione'),
+    speseResidue: somma(future, 'spese'),
     prima: rate[0],
     ultima: rate[rate.length - 1],
   };
@@ -436,9 +445,13 @@ function renderVeicoli() {
     const prossimaN = f.prossima ? f.prossima.n : null;
     const ticks = f.rate.map((r) => `<i class="${r.pagata ? 'paid' : r.n === prossimaN ? 'next' : ''}"></i>`).join('');
     const rataOra = f.prossima || f.ultima;
-    const rataSub = rataOra.assicurazione
-      ? `${eur(rataOra.rata)} + ${eur(rataOra.assicurazione)} assicurazione`
-      : np === 0 ? `da ${meseLabel(f.prima.mese)}` : 'nessun extra';
+    // se la prossima è la prima e ha spese in più, mostra la rata tipica e cita la prima a parte
+    const tipica = rataOra.n === 1 && f.speseIniziali && f.rate[1] ? f.rate[1] : rataOra;
+    const extra = [];
+    if (tipica.assicurazione) extra.push(`${eur(tipica.assicurazione)} assicurazione`);
+    if (tipica.spese) extra.push(`${eur(tipica.spese)} spese`);
+    let rataSub = extra.length ? `${eur(tipica.rata)} + ${extra.join(' + ')}` : 'nessun extra';
+    if (tipica !== rataOra) rataSub += ` · la prima ${eur(rataOra.totale)}`;
 
     const righe = [];
     if (f.finanziaria) righe.push(['Finanziaria', f.finanziaria]);
@@ -450,6 +463,8 @@ function renderVeicoli() {
       const fine = f.rate[f.rateAssicurate - 1];
       righe.push(['Assicurazione', `${eur(f.assicurazione)} × ${f.rateAssicurate} rate (fino a ${meseLabel(fine.mese)})`]);
     }
+    if (f.spese) righe.push(['Spese', `${eur(f.spese)} a rata`]);
+    if (f.speseIniziali) righe.push(['Spese in più sulla prima rata', eur(f.speseIniziali)]);
     righe.push(['Durata', `${meseLabel(f.prima.mese)} – ${meseLabel(f.ultima.mese)}`]);
     righe.push(['Totale da rimborsare', eur(somma(f.rate, 'totale')), true]);
     if (f.tassoMensile > 0) {
@@ -458,6 +473,7 @@ function renderVeicoli() {
       righe.push(['Interessi ancora da pagare', eur(f.interessiResidui)]);
     }
     if (f.assicurazioneResidua) righe.push(['Assicurazione ancora da pagare', eur(f.assicurazioneResidua)]);
+    if (f.speseResidue) righe.push(['Spese ancora da pagare', eur(f.speseResidue)]);
 
     return `
     <article class="car" style="--c:${f.colore}">
@@ -477,7 +493,7 @@ function renderVeicoli() {
         <dl class="figs">
           <div><dt>Ancora da pagare</dt><dd>${eur(f.ancora)}</dd><span class="sub">${f.future.length} rate</span></div>
           <div><dt>Debito residuo</dt><dd>${eur(f.capitaleResiduo)}</dd><span class="sub">${f.tassoMensile > 0 ? 'capitale da restituire' : 'senza interessi indicati'}</span></div>
-          <div><dt>Rata</dt><dd>${eur(rataOra.totale)}</dd><span class="sub">${rataSub}</span></div>
+          <div><dt>Rata</dt><dd>${eur(tipica.totale)}</dd><span class="sub">${rataSub}</span></div>
           <div><dt>${f.prossima ? 'Prossima scadenza' : 'Ultima rata'}</dt><dd>${f.prossima ? scadenzaLabel(f.prossima) : scadenzaLabel(f.ultima)}</dd><span class="sub">ultima ${meseLabel(f.ultima.mese)}</span></div>
         </dl>
         <details class="contract">
@@ -512,8 +528,8 @@ function renderGrafico() {
   if (!mesi.length) { svg.innerHTML = ''; return; }
   const debito = vistaGrafico === 'debito';
   $('#chart-note').textContent = debito
-    ? 'Quanto resta da pagare all’inizio di ogni mese, con interessi e assicurazione.'
-    : 'Quanto esce ogni mese, assicurazione inclusa.';
+    ? 'Quanto resta da pagare all’inizio di ogni mese, con interessi, assicurazione e spese.'
+    : 'Quanto esce ogni mese, assicurazione e spese incluse.';
 
   // valori per serie: in "rata" uno per mese, in "debito" un punto in più (saldato)
   const valori = debito
@@ -644,7 +660,11 @@ function renderPeriodi() {
   };
   $('#periods').innerHTML = periodi.map((p, k) => {
     const durata = p.a - p.da + 1;
-    const parti = p.m.voci.map((v, s) => (v ? `<span><i class="dot" style="--c:${S.fin[s].colore}"></i>${esc(S.fin[s].breve)} ${eur(v.totale)}${v.assicurazione ? ' <span class="muted">(con assicurazione)</span>' : ''}</span>` : '')).join('');
+    const parti = p.m.voci.map((v, s) => {
+      if (!v) return '';
+      const extra = [v.assicurazione && 'assicurazione', v.spese && 'spese'].filter(Boolean);
+      return `<span><i class="dot" style="--c:${S.fin[s].colore}"></i>${esc(S.fin[s].breve)} ${eur(v.totale)}${extra.length ? ` <span class="muted">(con ${extra.join(' e ')})</span>` : ''}</span>`;
+    }).join('');
     return `<li class="${k === 0 ? 'now' : ''}">
       <span class="when">${intervallo(p.da, p.a)}<small>${durata === 1 ? '1 mese' : durata + ' mesi'}${k === 0 ? ' · adesso' : ''}</small></span>
       <span class="amt">${eur(p.m.totale)}<small> /mese</small></span>
@@ -678,8 +698,8 @@ function renderProspetto() {
     });
   } else {
     const f = fin.find((x) => x.id === tabProspetto);
-    const conInteressi = f.tassoMensile > 0, conAssic = f.rate.some((r) => r.assicurazione);
-    intestazione = `<tr><th>N.</th><th class="l">Scadenza</th>${conInteressi ? '<th>Capitale</th><th>Interessi</th>' : ''}${conAssic ? '<th>Assicurazione</th>' : ''}<th>Rata</th><th>${conInteressi ? 'Debito residuo' : 'Ancora da pagare'}</th></tr>`;
+    const conInteressi = f.tassoMensile > 0, conAssic = f.rate.some((r) => r.assicurazione), conSpese = f.rate.some((r) => r.spese);
+    intestazione = `<tr><th>N.</th><th class="l">Scadenza</th>${conInteressi ? '<th>Capitale</th><th>Interessi</th>' : ''}${conAssic ? '<th>Assicurazione</th>' : ''}${conSpese ? '<th>Spese</th>' : ''}<th>Rata</th><th>${conInteressi ? 'Debito residuo' : 'Ancora da pagare'}</th></tr>`;
     righe = f.rate.map((r) => {
       const prossima = f.prossima && r.n === f.prossima.n;
       const dopo = conInteressi ? r.residuo : (f.rate.length - r.n) * f.rata;
@@ -690,6 +710,7 @@ function renderProspetto() {
           <td class="l">${scadenzaLabel(r)}${prossima ? '<span class="pill">Prossima</span>' : ''}</td>
           ${conInteressi ? `<td>${eur(r.quota)}</td><td>${eur(r.interessi)}</td>` : ''}
           ${conAssic ? `<td>${r.assicurazione ? eur(r.assicurazione) : '<span class="muted">—</span>'}</td>` : ''}
+          ${conSpese ? `<td>${r.spese ? eur(r.spese) : '<span class="muted">—</span>'}</td>` : ''}
           <td class="strong">${eur(r.totale)}</td>
           <td>${eur(dopo)}</td></tr>`,
       };

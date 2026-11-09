@@ -5,7 +5,7 @@ Una pagina sola per tenere d'occhio i finanziamenti: quanto resta da pagare, il 
 Finanziamenti caricati:
 
 - **Alfa Romeo Stelvio** (Rosso Edizione, Grigio Silverstone): Stellantis Financial Services, 26.789,42 € in 96 rate da 378,82 € + 30 € di assicurazione per le prime 48, dal 29 giugno 2025.
-- **Kawasaki Z650S** (nero e oro): 36 rate da 210 €, dal 15 febbraio 2027 al 15 gennaio 2030.
+- **Kawasaki Z650S** (nero e oro): 6.700 € al TAN 5,95% (TAEG 10,19%) in 36 rate da 203,68 € più 6,52 € di spese (210,20 € al mese, la prima 227,95 €), dal 15 febbraio 2027 al 15 gennaio 2030. Totale 7.584,95 €.
 
 ## Uso
 
